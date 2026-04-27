@@ -1,13 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/core/theme/app_shadows.dart';
-import 'package:gestion_driver/features/vehicules/models/vehicle.dart';
+import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
 
 class VehiculeCard extends StatelessWidget {
-  const VehiculeCard({super.key, required this.vehicle, required this.onTap});
+  const VehiculeCard({super.key, required this.vehicule, required this.onTap});
 
-  final Vehicle vehicle;
+  final Vehicule vehicule;
   final VoidCallback onTap;
 
   @override
@@ -20,7 +21,7 @@ class VehiculeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border(
             left: BorderSide(
-              color: vehicle.badgeTone.foregroundColor,
+              color: vehicule.badgeTone.foregroundColor,
               width: 3,
             ),
           ),
@@ -41,7 +42,7 @@ class VehiculeCard extends StatelessWidget {
                     ),
                   ),
                   child: Icon(
-                    Icons.local_shipping,
+                    CupertinoIcons.car_detailed,
                     size: 60,
                     color: AppColors.textSecondary.withOpacity(0.3),
                   ),
@@ -55,11 +56,11 @@ class VehiculeCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: vehicle.badgeTone.foregroundColor,
+                      color: vehicule.badgeTone.foregroundColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      vehicle.badgeLabel,
+                      vehicule.badgeLabel,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -81,7 +82,7 @@ class VehiculeCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          vehicle.name,
+                          vehicule.name,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -90,7 +91,7 @@ class VehiculeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'PLATE: ${vehicle.plate}',
+                          'PLAQUE: ${vehicule.plaque}',
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -101,7 +102,7 @@ class VehiculeCard extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              vehicle.infoLabel,
+                              vehicule.infoLabel,
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
@@ -109,9 +110,9 @@ class VehiculeCard extends StatelessWidget {
                             ),
                             const Spacer(),
                             Text(
-                              vehicle.infoValue,
+                              vehicule.infoValue,
                               style: TextStyle(
-                                color: vehicle.infoTone.foregroundColor,
+                                color: vehicule.infoTone.foregroundColor,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -125,7 +126,7 @@ class VehiculeCard extends StatelessWidget {
                             value: 0.7,
                             backgroundColor: AppColors.bg,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              vehicle.badgeTone.foregroundColor,
+                              vehicule.badgeTone.foregroundColor,
                             ),
                             minHeight: 3,
                           ),

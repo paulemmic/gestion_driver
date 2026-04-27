@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/core/theme/app_shadows.dart';
-import 'package:gestion_driver/features/vehicules/models/vehicle.dart';
+import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
 import 'package:gestion_driver/shared/widgets/status_badge.dart';
 
 class VehiculeDocCard extends StatelessWidget {
   const VehiculeDocCard({super.key, required this.document});
 
-  final VehicleDocument document;
+  final VehiculeDocument document;
 
   @override
   Widget build(BuildContext context) {

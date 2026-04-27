@@ -37,14 +37,23 @@ class ChauffeurCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.bg,
-                    child: Text(
-                      chauffeur.initials,
-                      style: const TextStyle(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    foregroundImage:
+                        chauffeur.photoUrl != null &&
+                            chauffeur.photoUrl!.trim().isNotEmpty
+                        ? NetworkImage(chauffeur.photoUrl!.trim())
+                        : null,
+                    child:
+                        chauffeur.photoUrl != null &&
+                            chauffeur.photoUrl!.trim().isNotEmpty
+                        ? null
+                        : Text(
+                            chauffeur.initials,
+                            style: const TextStyle(
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

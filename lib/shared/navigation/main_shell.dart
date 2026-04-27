@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/core/theme/app_shadows.dart';
@@ -37,19 +38,19 @@ class _MainShellState extends State<MainShell> {
             child: Row(
               children: [
                 _NavDestination(
-                  icon: Icons.dashboard_outlined,
+                  icon: CupertinoIcons.square_grid_2x2,
                   label: 'DASHBOARD',
                   active: _currentIndex == 0,
                   onTap: () => setState(() => _currentIndex = 0),
                 ),
                 _NavDestination(
-                  icon: Icons.person_outline,
+                  icon: CupertinoIcons.person,
                   label: 'CHAUFFEURS',
                   active: _currentIndex == 1,
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
                 _NavDestination(
-                  icon: Icons.local_shipping_outlined,
+                  icon: CupertinoIcons.car_detailed,
                   label: 'VEHICULES',
                   active: _currentIndex == 2,
                   onTap: () => setState(() => _currentIndex = 2),

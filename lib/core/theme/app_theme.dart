@@ -4,7 +4,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light() {
+  static ThemeData light(secondary) {
     final base = ThemeData(
       useMaterial3: true,
       fontFamily: 'Georgia',
