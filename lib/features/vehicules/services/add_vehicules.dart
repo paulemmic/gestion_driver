@@ -7,13 +7,11 @@ import 'package:uuid/uuid.dart';
 class AddVehicules {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // ─── Formatage kilométrage ─────────────────────────────────────────────────
   static String _formatKm(int km) {
     if (km >= 1000) return '${(km / 1000).toStringAsFixed(1)}k';
     return km.toString();
   }
 
-  // ─── Construction depuis le formulaire ────────────────────────────────────
   Vehicule buildFromForm({
     required String marque,
     required String modele,
@@ -46,7 +44,9 @@ class AddVehicules {
       statut: statut,
       notes: notes,
       infoLabel: 'Kilométrage',
-      infoValue: kilometrage != null ? '${_formatKm(kilometrage)} km' : '0 km',
+      infoValue: kilometrage != null
+          ? '${AddVehicules._formatKm(kilometrage)} km'
+          : '0 km',
       infoTone: StatusTone.neutral,
       badgeLabel: statut.toUpperCase(),
       badgeTone: badgeTone,
@@ -55,19 +55,8 @@ class AddVehicules {
       nextExpiration: '—',
       nextExpirationTone: StatusTone.neutral,
       documents: const [],
-      fuelCard: const FuelCardInfo(
-        status: '—',
-        tone: StatusTone.neutral,
-        subtitle: '—',
-        expiry: '—',
-      ),
-      tollTag: const TollTagInfo(
-        status: '—',
-        tone: StatusTone.neutral,
-        subtitle: '—',
-        issue: '—',
-        actionLabel: '—',
-      ),
+      fuelCard: null,
+      tollTag: null,
       createdAt: DateTime.now(),
     );
   }
@@ -100,7 +89,6 @@ class AddVehicules {
     await firestore.collection('vehicules').doc(id).set(vehiculeMap);
   }
 
-  // ─── Stream temps réel ─────────────────────────────────────────────────────
   Stream<List<Vehicule>> streamAll() {
     return firestore
         .collection('vehicules')

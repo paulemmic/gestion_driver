@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
+import 'package:gestion_driver/features/drivers/presentation/widgets/date_field.dart';
+import 'package:gestion_driver/features/drivers/presentation/widgets/dropdown_field.dart';
+import 'package:gestion_driver/features/drivers/presentation/widgets/section_label.dart';
 import 'package:gestion_driver/features/drivers/services/add_chauffeur.dart';
 import 'package:gestion_driver/shared/widgets/fleet_app_bar.dart';
 
@@ -11,41 +14,39 @@ class AddChauffeurPage extends StatefulWidget {
 }
 
 class _AddChauffeurPageState extends State<AddChauffeurPage> {
-  final _formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>();
 
-  // Controllers
-  final _nomController = TextEditingController();
-  final _prenomController = TextEditingController();
-  final _telephoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _permisController = TextEditingController();
-  final _cinController = TextEditingController();
+  final nomController = TextEditingController();
+  final prenomController = TextEditingController();
+  final telephoneController = TextEditingController();
+  final emailController = TextEditingController();
+  final permisController = TextEditingController();
+  final cinController = TextEditingController();
 
-  String _selectedStatut = 'Actif';
-  String _selectedCategorie = 'B';
-  DateTime? _dateNaissance;
-  DateTime? _dateExpirationPermis;
-  DateTime? _dateExpirationVisite;
-  bool _isLoading = false;
-  // final _showError = false;
+  String selectedStatut = 'Actif';
+  String selectedCategorie = 'B';
+  DateTime? dateNaissance;
+  DateTime? dateExpirationPermis;
+  DateTime? dateExpirationVisite;
+  bool isLoading = false;
 
-  final List<String> _statuts = ['Actif', 'Inactif', 'En congé', 'Suspendu'];
-  final List<String> _categories = ['A', 'B', 'C', 'D', 'E'];
+  final List<String> statuts = ['Actif', 'Inactif', 'En congé', 'Suspendu'];
+  final List<String> categories = ['A', 'B', 'C', 'D', 'E'];
 
   @override
   void dispose() {
-    _nomController.dispose();
-    _prenomController.dispose();
-    _telephoneController.dispose();
-    _emailController.dispose();
-    _permisController.dispose();
-    _cinController.dispose();
+    nomController.dispose();
+    prenomController.dispose();
+    telephoneController.dispose();
+    emailController.dispose();
+    permisController.dispose();
+    cinController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDate(
+  Future<void> pickDate(
     BuildContext context, {
-    required _DateField field,
+    required DateField field,
   }) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -66,18 +67,21 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
     if (picked != null) {
       setState(() {
         switch (field) {
-          case _DateField.naissance:
-            _dateNaissance = picked;
-          case _DateField.permis:
-            _dateExpirationPermis = picked;
-          case _DateField.visite:
-            _dateExpirationVisite = picked;
+          case DateField.naissance:
+            dateNaissance = picked;
+            break;
+          case DateField.permis:
+            dateExpirationPermis = picked;
+            break;
+          case DateField.visite:
+            dateExpirationVisite = picked;
+            break;
         }
       });
     }
   }
 
-  String _formatDate(DateTime? date) {
+  String formatDate(DateTime? date) {
     if (date == null) return 'Sélectionner';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
@@ -85,34 +89,33 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
   // En haut du State
   final addChauffeurService = AddChauffeur();
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> submit() async {
+    if (!formKey.currentState!.validate()) return;
 
-    if (_dateNaissance == null) {
-      _showError('Veuillez sélectionner la date de naissance.');
+    if (dateNaissance == null) {
+      showError('Veuillez sélectionner la date de naissance.');
       return;
     }
-    if (_dateExpirationPermis == null) {
-      _showError("Veuillez sélectionner la date d'expiration du permis.");
+    if (dateExpirationPermis == null) {
+      showError("Veuillez sélectionner la date d'expiration du permis.");
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => isLoading = true);
 
     try {
-      // 1. Construire l'objet Chauffeur
       final nouveauChauffeur = addChauffeurService.buildFromForm(
-        nom: _nomController.text.trim(),
-        prenom: _prenomController.text.trim(),
-        telephone: _telephoneController.text.trim(),
-        email: _emailController.text.trim(),
-        numeroCin: _cinController.text.trim(),
-        numeroPermis: _permisController.text.trim(),
-        categoriePermis: _selectedCategorie,
-        statut: _selectedStatut,
-        dateNaissance: _dateNaissance,
-        dateExpirationPermis: _dateExpirationPermis,
-        dateExpirationVisite: _dateExpirationVisite,
+        nom: nomController.text.trim(),
+        prenom: prenomController.text.trim(),
+        telephone: telephoneController.text.trim(),
+        email: emailController.text.trim(),
+        numeroCin: cinController.text.trim(),
+        numeroPermis: permisController.text.trim(),
+        categoriePermis: selectedCategorie,
+        statut: selectedStatut,
+        dateNaissance: dateNaissance,
+        dateExpirationPermis: dateExpirationPermis,
+        dateExpirationVisite: dateExpirationVisite,
       );
 
       // 2. Enregistrer dans Firestore
@@ -146,13 +149,13 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
       Navigator.of(context).pop();
     } on Exception catch (e) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      showError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  void _showError(String message) {
+  void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -223,7 +226,7 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
           // Form
           Expanded(
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -272,14 +275,14 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    _SectionLabel(label: 'INFORMATIONS PERSONNELLES'),
+                    SectionLabel(label: 'INFORMATIONS PERSONNELLES'),
                     const SizedBox(height: 12),
 
                     Row(
                       children: [
                         Expanded(
-                          child: _FormField(
-                            controller: _nomController,
+                          child: FormField(
+                            controller: nomController,
                             label: 'Nom',
                             icon: Icons.person_outline,
                             validator: (v) =>
@@ -288,8 +291,8 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _FormField(
-                            controller: _prenomController,
+                          child: FormField(
+                            controller: prenomController,
                             label: 'Prénom',
                             icon: Icons.person_outline,
                             validator: (v) =>
@@ -300,16 +303,16 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    _DatePickerField(
+                    DatePickerField(
                       label: 'Date de naissance',
-                      value: _formatDate(_dateNaissance),
+                      value: formatDate(dateNaissance),
                       onTap: () =>
-                          _pickDate(context, field: _DateField.naissance),
+                          pickDate(context, field: DateField.naissance),
                     ),
                     const SizedBox(height: 12),
 
-                    _FormField(
-                      controller: _cinController,
+                    FormField(
+                      controller: cinController,
                       label: "N° CIN",
                       icon: Icons.badge_outlined,
                       validator: (v) =>
@@ -317,8 +320,8 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    _FormField(
-                      controller: _telephoneController,
+                    FormField(
+                      controller: telephoneController,
                       label: 'Téléphone',
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
@@ -327,11 +330,11 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    _SectionLabel(label: 'PERMIS & CONFORMITÉ'),
+                    SectionLabel(label: 'PERMIS & CONFORMITÉ'),
                     const SizedBox(height: 12),
 
-                    _FormField(
-                      controller: _permisController,
+                    FormField(
+                      controller: permisController,
                       label: 'N° Permis de conduire',
                       icon: Icons.credit_card_outlined,
                       validator: (v) =>
@@ -340,45 +343,45 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     const SizedBox(height: 12),
 
                     // Catégorie permis
-                    _DropdownField(
+                    DropdownField(
                       label: 'Catégorie permis',
-                      value: _selectedCategorie,
-                      items: _categories,
+                      value: selectedCategorie,
+                      items: categories,
                       icon: Icons.category_outlined,
-                      onChanged: (v) => setState(() => _selectedCategorie = v!),
+                      onChanged: (v) => setState(() => selectedCategorie = v!),
                     ),
                     const SizedBox(height: 12),
 
-                    _DatePickerField(
+                    DatePickerField(
                       label: "Expiration permis",
-                      value: _formatDate(_dateExpirationPermis),
-                      onTap: () => _pickDate(context, field: _DateField.permis),
+                      value: formatDate(dateExpirationPermis),
+                      onTap: () => pickDate(context, field: DateField.permis),
                       isAlert:
-                          _dateExpirationPermis != null &&
-                          _dateExpirationPermis!.isBefore(
+                          dateExpirationPermis != null &&
+                          dateExpirationPermis!.isBefore(
                             DateTime.now().add(const Duration(days: 30)),
                           ),
                     ),
                     const SizedBox(height: 12),
 
-                    _DatePickerField(
+                    DatePickerField(
                       label: 'Expiration visite médicale',
-                      value: _formatDate(_dateExpirationVisite),
-                      onTap: () => _pickDate(context, field: _DateField.visite),
+                      value: formatDate(dateExpirationVisite),
+                      onTap: () => pickDate(context, field: DateField.visite),
                       isAlert:
-                          _dateExpirationVisite != null &&
-                          _dateExpirationVisite!.isBefore(
+                          dateExpirationVisite != null &&
+                          dateExpirationVisite!.isBefore(
                             DateTime.now().add(const Duration(days: 30)),
                           ),
                     ),
                     const SizedBox(height: 24),
 
-                    _SectionLabel(label: 'STATUT'),
+                    SectionLabel(label: 'STATUT'),
                     const SizedBox(height: 12),
 
                     Row(
-                      children: _statuts.map((s) {
-                        final isSelected = _selectedStatut == s;
+                      children: statuts.map((s) {
+                        final isSelected = selectedStatut == s;
                         Color chipColor;
                         switch (s) {
                           case 'Actif':
@@ -395,7 +398,7 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: GestureDetector(
-                            onTap: () => setState(() => _selectedStatut = s),
+                            onTap: () => setState(() => selectedStatut = s),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(
@@ -442,8 +445,8 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: _isLoading ? null : _submit,
-                          child: _isLoading
+                          onPressed: isLoading ? null : submit,
+                          child: isLoading
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
@@ -482,52 +485,20 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
   }
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-enum _DateField { naissance, permis, visite }
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label});
+class FormField extends StatelessWidget {
+  final TextEditingController controller;
   final String label;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 14,
-          color: AppColors.navy,
-          margin: const EdgeInsets.only(right: 8),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  const _FormField({
+  const FormField({
     required this.controller,
     required this.label,
     required this.icon,
     this.keyboardType,
     this.validator,
   });
-
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -570,158 +541,6 @@ class _FormField extends StatelessWidget {
           borderSide: const BorderSide(color: AppColors.red),
         ),
       ),
-    );
-  }
-}
-
-class _DatePickerField extends StatelessWidget {
-  const _DatePickerField({
-    required this.label,
-    required this.value,
-    required this.onTap,
-    this.isAlert = false,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-  final bool isAlert;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isAlert ? AppColors.red : const Color(0xFFE0E6F0),
-            width: isAlert ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 18,
-              color: isAlert ? AppColors.red : AppColors.navy,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: isAlert ? AppColors.red : AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: value == 'Sélectionner'
-                          ? AppColors.textSecondary
-                          : AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: value == 'Sélectionner'
-                          ? FontWeight.normal
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: isAlert ? AppColors.red : AppColors.textSecondary,
-              size: 18,
-            ),
-            if (isAlert) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'ALERTE',
-                  style: TextStyle(
-                    color: AppColors.red,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DropdownField extends StatelessWidget {
-  const _DropdownField({
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.icon,
-    required this.onChanged,
-  });
-
-  final String label;
-  final String value;
-  final List<String> items;
-  final IconData icon;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      onChanged: onChanged,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 13,
-        ),
-        prefixIcon: Icon(icon, color: AppColors.navy, size: 18),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0E6F0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0E6F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
-        ),
-      ),
-      items: items
-          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-          .toList(),
     );
   }
 }

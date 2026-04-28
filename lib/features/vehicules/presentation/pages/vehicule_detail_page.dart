@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
-import 'package:gestion_driver/core/theme/app_shadows.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
+import 'package:gestion_driver/features/vehicules/models/vehicule_document_draft.dart';
+import 'package:gestion_driver/features/vehicules/models/vehicule_historique_draft.dart';
+import 'package:gestion_driver/features/vehicules/models/vehicule_historique_entry.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/fuel_card_panel.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/history_tile.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/info_panel.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/missing_operational_cards_hint.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/toll_tag_panel.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/vehicule_doc_card.dart';
+import 'package:gestion_driver/features/vehicules/services/document.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
-import 'package:gestion_driver/shared/widgets/status_badge.dart';
 
 class VehiculeDetailPage extends StatefulWidget {
   const VehiculeDetailPage({super.key, required this.vehicule});
@@ -16,21 +23,43 @@ class VehiculeDetailPage extends StatefulWidget {
 }
 
 class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
-  late final List<VehiculeDocument> _documents;
-  final List<_VehiculeHistoryEntry> _history = [];
+  final DocumentService documentService = DocumentService();
+
+  List<VehiculeDocument> documents = [];
+  bool isLoadingDocuments = true;
+  String? loadError;
+
+  final List<VehiculeHistoriqueEntry> history = [];
 
   @override
   void initState() {
     super.initState();
-    _documents = List<VehiculeDocument>.from(widget.vehicule.documents);
-    _seedHistory();
+    loadDocuments();
   }
 
-  void _seedHistory() {
+  Future<void> loadDocuments() async {
+    try {
+      final docs = await documentService.fetchDocuments(widget.vehicule.id!);
+      if (!mounted) return;
+      setState(() {
+        documents = docs;
+        isLoadingDocuments = false;
+      });
+      seedHistory(); // seed only once we have the real count
+    } on DocumentServiceException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loadError = e.message;
+        isLoadingDocuments = false;
+      });
+    }
+  }
+
+  void seedHistory() {
     final now = DateTime.now();
 
-    _history.add(
-      _VehiculeHistoryEntry(
+    history.add(
+      VehiculeHistoriqueEntry(
         title: 'Fiche consultée',
         description:
             'Ouverture des détails pour ${widget.vehicule.name} (${widget.vehicule.plaque}).',
@@ -39,11 +68,11 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
       ),
     );
 
-    if (_documents.isNotEmpty) {
-      _history.add(
-        _VehiculeHistoryEntry(
+    if (documents.isNotEmpty) {
+      history.add(
+        VehiculeHistoriqueEntry(
           title: 'Documents synchronisés',
-          description: '${_documents.length} document(s) déjà disponible(s).',
+          description: '${documents.length} document(s) déjà disponible(s).',
           timestamp: now.subtract(const Duration(minutes: 1)),
           icon: Icons.folder_outlined,
         ),
@@ -52,7 +81,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
   }
 
   Future<void> _openAddActionSheet() async {
-    final action = await showModalBottomSheet<_VehiculeAddAction>(
+    final action = await showModalBottomSheet<VehiculeAddAction>(
       context: context,
       showDragHandle: true,
       builder: (modalContext) {
@@ -64,13 +93,13 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                 leading: const Icon(Icons.upload_file_outlined),
                 title: const Text('Ajouter un document'),
                 onTap: () =>
-                    Navigator.of(modalContext).pop(_VehiculeAddAction.document),
+                    Navigator.of(modalContext).pop(VehiculeAddAction.document),
               ),
               ListTile(
                 leading: const Icon(Icons.history_edu_outlined),
                 title: const Text('Ajouter un historique'),
                 onTap: () =>
-                    Navigator.of(modalContext).pop(_VehiculeAddAction.history),
+                    Navigator.of(modalContext).pop(VehiculeAddAction.history),
               ),
             ],
           ),
@@ -81,22 +110,22 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     if (action == null || !mounted) return;
 
     switch (action) {
-      case _VehiculeAddAction.document:
-        await _openAddDocumentDialog();
-      case _VehiculeAddAction.history:
-        await _openAddHistoryDialog();
+      case VehiculeAddAction.document:
+        await openAddDocumentDialog();
+      case VehiculeAddAction.history:
+        await openAddHistoryDialog();
     }
   }
 
-  Future<void> _openAddDocumentDialog() async {
+  Future<void> openAddDocumentDialog() async {
     final titleCtrl = TextEditingController();
     final subtitleCtrl = TextEditingController();
     final expiryCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    _DocumentStatusOption status = _DocumentStatusOption.valide;
+    DocumentStatusOption status = DocumentStatusOption.valide;
 
-    final draft = await showDialog<_VehiculeDocumentDraft>(
+    final draft = await showDialog<VehiculeDocumentDraft>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -133,11 +162,11 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<_DocumentStatusOption>(
+                      DropdownButtonFormField<DocumentStatusOption>(
                         initialValue: status,
                         decoration: const InputDecoration(labelText: 'Statut'),
-                        items: _DocumentStatusOption.values.map((value) {
-                          return DropdownMenuItem<_DocumentStatusOption>(
+                        items: DocumentStatusOption.values.map((value) {
+                          return DropdownMenuItem<DocumentStatusOption>(
                             value: value,
                             child: Text(value.label),
                           );
@@ -169,7 +198,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                   onPressed: () {
                     if (!formKey.currentState!.validate()) return;
                     Navigator.of(dialogContext).pop(
-                      _VehiculeDocumentDraft(
+                      VehiculeDocumentDraft(
                         title: titleCtrl.text.trim(),
                         subtitle: subtitleCtrl.text.trim(),
                         status: status,
@@ -187,10 +216,6 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
       },
     );
 
-    titleCtrl.dispose();
-    subtitleCtrl.dispose();
-    expiryCtrl.dispose();
-
     if (draft == null) return;
 
     final document = VehiculeDocument(
@@ -204,10 +229,10 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     );
 
     setState(() {
-      _documents.insert(0, document);
-      _history.insert(
+      documents.insert(0, document);
+      history.insert(
         0,
-        _VehiculeHistoryEntry(
+        VehiculeHistoriqueEntry(
           title: 'Document ajouté',
           description: '${draft.title} ajouté au dossier du véhicule.',
           timestamp: DateTime.now(),
@@ -216,22 +241,41 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
       );
     });
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text('Document "${draft.title}" ajouté avec succès.'),
-      ),
-    );
+    try {
+      await documentService.addDocument(
+        vehiculeId: widget.vehicule.id!,
+        document: document,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Document "${draft.title}" ajouté avec succès.'),
+        ),
+      );
+    } on DocumentServiceException catch (e) {
+      // Roll back optimistic insert
+      if (!mounted) return;
+      setState(() => documents.removeAt(0));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.red,
+          content: Text('Erreur : ${e.message}'),
+        ),
+      );
+    }
   }
 
-  Future<void> _openHistorySheet() {
+  Future<void> openHistorySheet() {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (modalContext) {
-        final sortedHistory = [..._history]
+        final sortedHistory = [...history]
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
         return SafeArea(
@@ -272,10 +316,8 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     Expanded(
                       child: ListView.separated(
                         itemCount: sortedHistory.length,
-                        itemBuilder: (context, index) {
-                          final entry = sortedHistory[index];
-                          return _HistoryTile(entry: entry);
-                        },
+                        itemBuilder: (context, index) =>
+                            HistoryTile(entry: sortedHistory[index]),
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
                       ),
                     ),
@@ -288,13 +330,13 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     );
   }
 
-  Future<void> _openAddHistoryDialog() async {
+  Future<void> openAddHistoryDialog() async {
     final titleCtrl = TextEditingController();
     final descriptionCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    _HistoryEntryType type = _HistoryEntryType.maintenance;
+    HistoryEntryType type = HistoryEntryType.maintenance;
 
-    final draft = await showDialog<_VehiculeHistoryDraft>(
+    final draft = await showDialog<VehiculeHistoriqueDraft>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -307,11 +349,11 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      DropdownButtonFormField<_HistoryEntryType>(
+                      DropdownButtonFormField<HistoryEntryType>(
                         initialValue: type,
                         decoration: const InputDecoration(labelText: 'Type'),
-                        items: _HistoryEntryType.values.map((value) {
-                          return DropdownMenuItem<_HistoryEntryType>(
+                        items: HistoryEntryType.values.map((value) {
+                          return DropdownMenuItem<HistoryEntryType>(
                             value: value,
                             child: Text(value.label),
                           );
@@ -343,7 +385,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         maxLines: 3,
                         decoration: const InputDecoration(
                           labelText: 'Description',
-                          hintText: 'Détails de l’opération',
+                          hintText: 'Détails de l\'opération',
                         ),
                       ),
                     ],
@@ -359,7 +401,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                   onPressed: () {
                     if (!formKey.currentState!.validate()) return;
                     Navigator.of(dialogContext).pop(
-                      _VehiculeHistoryDraft(
+                      VehiculeHistoriqueDraft(
                         type: type,
                         title: titleCtrl.text.trim(),
                         description: descriptionCtrl.text.trim(),
@@ -376,15 +418,12 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
       },
     );
 
-    titleCtrl.dispose();
-    descriptionCtrl.dispose();
-
     if (draft == null) return;
 
     setState(() {
-      _history.insert(
+      history.insert(
         0,
-        _VehiculeHistoryEntry(
+        VehiculeHistoriqueEntry(
           title: draft.title,
           description: draft.description.isEmpty
               ? 'Entrée ajoutée manuellement depuis la fiche véhicule.'
@@ -418,596 +457,290 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final vehicule = widget.vehicule;
+    final fuelCard = vehicule.fuelCard;
+    final tollTag = vehicule.tollTag;
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.navy,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            const Text(
-              'Vehicules',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 16,
-            ),
-            Text(
-              vehicule.plaque,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 13,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.of(context).pop(documents);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.navy,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            onPressed: () => Navigator.of(context).pop(documents),
+          ),
+          titleSpacing: 0,
+          title: Row(
+            children: [
+              const Text(
+                'Vehicules',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
-            ),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+                size: 16,
+              ),
+              Text(
+                vehicule.plaque,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(icon: const Icon(Icons.search), onPressed: () {}),
           ],
         ),
-        actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    vehicule.name,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      vehicule.name,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.bg,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            vehicule.plaque,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: vehicule.badgeTone.foregroundColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          vehicule.badgeLabel,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            letterSpacing: 0.3,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _openAddActionSheet,
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              size: 16,
+                              color: AppColors.textPrimary,
+                            ),
+                            label: const Text('Ajouter'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: openHistorySheet,
+                            icon: const Icon(Icons.history, size: 16),
+                            label: const Text('Historique'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InfoPanel(
+                        title: 'ÉTAT DE CONFORMITÉ',
+                        value: vehicule.complianceStatus,
+                        toneColor: vehicule.complianceTone.foregroundColor,
+                        backgroundColor:
+                            vehicule.complianceTone.backgroundColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: InfoPanel(
+                        title: 'PROCHAINE EXPIRATION',
+                        value: vehicule.nextExpiration,
+                        toneColor: vehicule.nextExpirationTone.foregroundColor,
+                        backgroundColor:
+                            vehicule.nextExpirationTone.backgroundColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'DOCUMENTS OBLIGATOIRES',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Loading state
+                    if (isLoadingDocuments)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    // Error state
+                    else if (loadError != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppColors.bg,
-                          borderRadius: BorderRadius.circular(4),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.red),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppColors.red,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                loadError!,
+                                style: const TextStyle(
+                                  color: AppColors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  loadError = null;
+                                  isLoadingDocuments = true;
+                                });
+                                loadDocuments();
+                              },
+                              child: const Text('Réessayer'),
+                            ),
+                          ],
+                        ),
+                      )
+                    // Empty state
+                    else if (documents.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColors.border),
                         ),
-                        child: Text(
-                          vehicule.plaque,
-                          style: const TextStyle(
+                        child: const Text(
+                          'Aucun document pour le moment. Utilisez "Ajouter".',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: vehicule.badgeTone.foregroundColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        vehicule.badgeLabel,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11,
-                          letterSpacing: 0.3,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _openAddActionSheet,
-                          icon: const Icon(
-                            Icons.add_circle_outline,
-                            size: 16,
-                            color: AppColors.textPrimary,
-                          ),
-                          label: const Text('Ajouter'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _openHistorySheet,
-                          icon: const Icon(Icons.history, size: 16),
-                          label: const Text('Historique'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      )
+                    // Document list
+                    else
+                      for (var i = 0; i < documents.length; i++) ...[
+                        VehiculeDocCard(document: documents[i]),
+                        if (i < documents.length - 1)
+                          const SizedBox(height: 10),
+                      ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InfoPanel(
-                      title: 'ÉTAT DE CONFORMITÉ',
-                      value: vehicule.complianceStatus,
-                      toneColor: vehicule.complianceTone.foregroundColor,
-                      backgroundColor: vehicule.complianceTone.backgroundColor,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InfoPanel(
-                      title: 'PROCHAINE EXPIRATION',
-                      value: vehicule.nextExpiration,
-                      toneColor: vehicule.nextExpirationTone.foregroundColor,
-                      backgroundColor:
-                          vehicule.nextExpirationTone.backgroundColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'DOCUMENTS OBLIGATOIRES',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (_documents.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+              const SizedBox(height: 20),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CARTES OPÉRATIONNELLES',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
                       ),
-                      child: const Text(
-                        'Aucun document pour le moment. Utilisez "Ajouter".',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
-                  else
-                    for (var index = 0; index < _documents.length; index++) ...[
-                      VehiculeDocCard(document: _documents[index]),
-                      if (index < _documents.length - 1)
+                    ),
+                    const SizedBox(height: 10),
+                    if (fuelCard == null && tollTag == null)
+                      const MissingOperationalCardsHint()
+                    else ...[
+                      if (fuelCard != null) FuelCardPanel(card: fuelCard),
+                      if (fuelCard != null && tollTag != null)
                         const SizedBox(height: 10),
+                      if (tollTag != null) TollTagPanel(tag: tollTag),
                     ],
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'CARTES OPÉRATIONNELLES',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _FuelCardPanel(card: vehicule.fuelCard),
-                  const SizedBox(height: 10),
-                  _TollTagPanel(tag: vehicule.tollTag),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-enum _VehiculeAddAction { document, history }
-
-enum _DocumentStatusOption { valide, bientotExpire, expire }
-
-extension _DocumentStatusOptionStyle on _DocumentStatusOption {
-  String get label => switch (this) {
-    _DocumentStatusOption.valide => 'Valide',
-    _DocumentStatusOption.bientotExpire => 'Bientot expire',
-    _DocumentStatusOption.expire => 'Expire',
-  };
-
-  String get badgeLabel => switch (this) {
-    _DocumentStatusOption.valide => 'VALIDE',
-    _DocumentStatusOption.bientotExpire => 'BIENTOT EXPIRE',
-    _DocumentStatusOption.expire => 'EXPIRE',
-  };
-
-  StatusTone get tone => switch (this) {
-    _DocumentStatusOption.valide => StatusTone.success,
-    _DocumentStatusOption.bientotExpire => StatusTone.warning,
-    _DocumentStatusOption.expire => StatusTone.danger,
-  };
-}
-
-enum _HistoryEntryType { maintenance, controle, incident, administratif }
-
-extension _HistoryEntryTypeStyle on _HistoryEntryType {
-  String get label => switch (this) {
-    _HistoryEntryType.maintenance => 'Maintenance',
-    _HistoryEntryType.controle => 'Contrôle',
-    _HistoryEntryType.incident => 'Incident',
-    _HistoryEntryType.administratif => 'Administratif',
-  };
-
-  IconData get icon => switch (this) {
-    _HistoryEntryType.maintenance => Icons.build_circle_outlined,
-    _HistoryEntryType.controle => Icons.fact_check_outlined,
-    _HistoryEntryType.incident => Icons.report_problem_outlined,
-    _HistoryEntryType.administratif => Icons.assignment_outlined,
-  };
-}
-
-class _VehiculeDocumentDraft {
-  const _VehiculeDocumentDraft({
-    required this.title,
-    required this.subtitle,
-    required this.status,
-    required this.expiry,
-  });
-
-  final String title;
-  final String subtitle;
-  final _DocumentStatusOption status;
-  final String expiry;
-}
-
-class _VehiculeHistoryDraft {
-  const _VehiculeHistoryDraft({
-    required this.type,
-    required this.title,
-    required this.description,
-  });
-
-  final _HistoryEntryType type;
-  final String title;
-  final String description;
-}
-
-class _VehiculeHistoryEntry {
-  const _VehiculeHistoryEntry({
-    required this.title,
-    required this.description,
-    required this.timestamp,
-    required this.icon,
-  });
-
-  final String title;
-  final String description;
-  final DateTime timestamp;
-  final IconData icon;
-}
-
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.entry});
-
-  final _VehiculeHistoryEntry entry;
-
-  String _formatHistoryDate(DateTime value) {
-    final day = value.day.toString().padLeft(2, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final year = value.year.toString();
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
-    return '$day/$month/$year - $hour:$minute';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: AppColors.blueLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(entry.icon, size: 18, color: AppColors.blue),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  entry.description,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _formatHistoryDate(entry.timestamp),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class InfoPanel extends StatelessWidget {
-  const InfoPanel({
-    required this.title,
-    required this.value,
-    required this.toneColor,
-    required this.backgroundColor,
-  });
-
-  final String title;
-  final String value;
-  final Color toneColor;
-  final Color backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 9,
-              letterSpacing: 0.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: toneColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FuelCardPanel extends StatelessWidget {
-  const _FuelCardPanel({required this.card});
-
-  final FuelCardInfo card;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: const Border(left: BorderSide(color: AppColors.blue, width: 3)),
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              StatusBadge(label: card.status, tone: card.tone),
-              const Spacer(),
-              Container(
-                width: 42,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.credit_card,
-                    color: Colors.white60,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Carte Carburant Fleet',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            card.subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'EXPIRATION',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 9,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  Text(
-                    card.expiry,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              const Icon(
-                Icons.qr_code_2,
-                color: AppColors.textSecondary,
-                size: 28,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TollTagPanel extends StatelessWidget {
-  const _TollTagPanel({required this.tag});
-
-  final TollTagInfo tag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: const Border(left: BorderSide(color: AppColors.red, width: 3)),
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.wifi_tethering,
-                color: AppColors.textSecondary,
-                size: 18,
-              ),
-              const Spacer(),
-              StatusBadge(label: tag.status, tone: tag.tone),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Badge Télépéage Autoroute',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            tag.subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.battery_alert, color: AppColors.red, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                tag.issue,
-                style: const TextStyle(
-                  color: AppColors.red,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.red,
-                side: const BorderSide(color: AppColors.red),
-              ),
-              child: Text(tag.actionLabel),
-            ),
-          ),
-        ],
       ),
     );
   }

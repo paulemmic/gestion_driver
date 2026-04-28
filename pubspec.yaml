@@ -45,8 +45,8 @@ dependencies:
   fluttertoast:
   intl:
   uuid:
-  google_fonts: ^6.0.0
-  provider: ^6.1.5
+  google_fonts:
+  provider:
 
 dev_dependencies:
   flutter_test:

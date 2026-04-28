@@ -1,3 +1,4 @@
+// features/vehicules/models/vehicule.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
@@ -15,8 +16,8 @@ class Vehicule {
   final String nextExpiration;
   final StatusTone nextExpirationTone;
   final List<VehiculeDocument> documents;
-  final FuelCardInfo fuelCard;
-  final TollTagInfo tollTag;
+  final FuelCardInfo? fuelCard;
+  final TollTagInfo? tollTag;
   final String? id;
   final String? marque;
   final String? modele;
@@ -41,19 +42,24 @@ class Vehicule {
     required this.nextExpiration,
     required this.nextExpirationTone,
     required this.documents,
-    required this.fuelCard,
-    required this.tollTag,
-    required this.id,
-    required this.marque,
-    required this.modele,
-    required this.vin,
-    required this.annee,
-    required this.kilometrage,
-    required this.carburant,
-    required this.statut,
-    required this.notes,
-    required this.createdAt,
+    this.fuelCard, // ← optionnel
+    this.tollTag, // ← optionnel
+    this.id,
+    this.marque,
+    this.modele,
+    this.vin,
+    this.annee,
+    this.kilometrage,
+    this.carburant,
+    this.statut,
+    this.notes,
+    this.createdAt,
   });
+
+  static String formatKm(int km) {
+    if (km >= 1000) return '${(km / 1000).toStringAsFixed(1)}k';
+    return km.toString();
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -80,16 +86,14 @@ class Vehicule {
 
   factory Vehicule.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-
     final statut = data['statut'] as String? ?? 'Actif';
+    final km = data['kilometrage'] as int?;
 
     final StatusTone badgeTone = switch (statut) {
       'En maintenance' => StatusTone.danger,
       'Inactif' => StatusTone.neutral,
       _ => StatusTone.success,
     };
-
-    final km = data['kilometrage'] as int?;
 
     return Vehicule(
       id: data['id'] ?? doc.id,
@@ -104,7 +108,7 @@ class Vehicule {
       statut: statut,
       notes: data['notes'],
       infoLabel: 'Kilométrage',
-      infoValue: km != null ? '${_formatKm(km)} km' : '—',
+      infoValue: km != null ? '${formatKm(km)} km' : '—',
       infoTone: StatusTone.neutral,
       badgeLabel: statut.toUpperCase(),
       badgeTone: badgeTone,
@@ -113,32 +117,22 @@ class Vehicule {
       nextExpiration: data['nextExpiration'] ?? '—',
       nextExpirationTone: StatusTone.neutral,
       documents: const [],
-      fuelCard: const FuelCardInfo(
-        status: '—',
-        tone: StatusTone.neutral,
-        subtitle: '—',
-        expiry: '—',
-      ),
-      tollTag: const TollTagInfo(
-        status: '—',
-        tone: StatusTone.neutral,
-        subtitle: '—',
-        issue: '—',
-        actionLabel: '—',
-      ),
+      fuelCard: null, // ← pas de fuelCard depuis Firestore
+      tollTag: null, // ← pas de tollTag depuis Firestore
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
-  }
-
-  static String _formatKm(int km) {
-    if (km >= 1000) {
-      return '${(km / 1000).toStringAsFixed(1)}k';
-    }
-    return km.toString();
   }
 }
 
 class VehiculeDocument {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String status;
+  final StatusTone tone;
+  final String extra;
+  final StatusTone extraTone;
+
   const VehiculeDocument({
     required this.icon,
     required this.title,
@@ -148,28 +142,20 @@ class VehiculeDocument {
     required this.extra,
     this.extraTone = StatusTone.neutral,
   });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String status;
-  final StatusTone tone;
-  final String extra;
-  final StatusTone extraTone;
 }
 
 class FuelCardInfo {
+  final String status;
+  final StatusTone tone;
+  final String subtitle;
+  final String expiry;
+
   const FuelCardInfo({
     required this.status,
     required this.tone,
     required this.subtitle,
     required this.expiry,
   });
-
-  final String status;
-  final StatusTone tone;
-  final String subtitle;
-  final String expiry;
 }
 
 class TollTagInfo {

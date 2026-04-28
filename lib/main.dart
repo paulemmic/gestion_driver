@@ -33,6 +33,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(context),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
         home: BlocConsumer<AuthCubit, AuthState>(
           builder: (context, state) {
             print(state);

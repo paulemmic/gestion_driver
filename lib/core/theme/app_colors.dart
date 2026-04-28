@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class AppColors {
   const AppColors._();
 
-  static const navy = Color(0xFF1C2B4A);
-  static const blue = Color(0xFF2563EB);
+  static const navy = Color(0xFF2a480a);
+  static const blue = Color(0xFF58a802);
   static const blueLight = Color(0xFFEFF4FF);
   static const green = Color(0xFF16A34A);
   static const greenLight = Color(0xFFDCFCE7);
@@ -22,21 +22,3 @@ class AppColors {
   static const shadowSoft = Color(0x0F000000);
   static const orangeLight = Color(0xFFFFF0E6);
 }
-
-// import 'package:flutter/material.dart';
-// import 'package:gestion_driver/core/theme/app_theme.dart';
-// import 'package:gestion_driver/shared/navigation/main_shell.dart';
-
-// class GestionDriverApp extends StatelessWidget {
-//   const GestionDriverApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'The Fleet Authority',
-//       theme: AppTheme.light(),
-//       home: const MainShell(),
-//     );
-//   }
-// }
