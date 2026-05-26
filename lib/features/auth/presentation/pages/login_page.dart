@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         "Mot de passe oublié?",
                         style: TextStyle(
-                          color: AppColors.navy,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

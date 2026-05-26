@@ -1,4 +1,3 @@
-// features/dashboard/models/dashboard_document_alert.dart
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/features/dashboard/data/services/dashboard_service.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
@@ -33,4 +32,6 @@ class DashboardDocumentAlert {
     if (daysRemaining <= 7) return '$daysRemaining jours — urgent';
     return '$daysRemaining jours restants';
   }
+
+  get status => null;
 }

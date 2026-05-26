@@ -48,6 +48,26 @@ class DocumentService {
     }
   }
 
+  Future<void> updateDocument({
+    required String vehiculeId,
+    required String firestoreId,
+    required VehiculeDocument document,
+  }) async {
+    try {
+      await documentsRef(
+        vehiculeId,
+      ).doc(firestoreId).update(toFirestore(document));
+    } on FirebaseException catch (e) {
+      throw DocumentServiceException(
+        'Erreur Firebase lors de la mise à jour : ${e.message}',
+      );
+    } catch (e) {
+      throw DocumentServiceException(
+        'Erreur inconnue lors de la mise à jour : $e',
+      );
+    }
+  }
+
   Future<void> deleteDocument({
     required String vehiculeId,
     required String firestoreId,

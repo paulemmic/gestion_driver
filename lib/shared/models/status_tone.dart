@@ -7,32 +7,32 @@ extension StatusToneStyle on StatusTone {
   Color get foregroundColor {
     switch (this) {
       case StatusTone.success:
-        return AppColors.green;
+        return AppColors.succe;
       case StatusTone.warning:
-        return AppColors.amber;
+        return AppColors.warning;
       case StatusTone.danger:
-        return AppColors.red;
+        return AppColors.danger;
       case StatusTone.accent:
-        return AppColors.blue;
+        return AppColors.accent;
       case StatusTone.notice:
-        return AppColors.orange;
+        return AppColors.warning;
       case StatusTone.neutral:
-        return AppColors.navy;
+        return AppColors.primary;
     }
   }
 
   Color get backgroundColor {
     switch (this) {
       case StatusTone.success:
-        return AppColors.greenLight;
+        return AppColors.succe.withOpacity(0.08);
       case StatusTone.warning:
-        return AppColors.amberLight;
+        return AppColors.warning.withOpacity(0.08);
       case StatusTone.danger:
-        return AppColors.redLight;
+        return AppColors.danger.withOpacity(0.08);
       case StatusTone.accent:
-        return AppColors.blueLight;
+        return AppColors.accent.withOpacity(0.08);
       case StatusTone.notice:
-        return AppColors.orangeLight;
+        return AppColors.warning.withOpacity(0.08);
       case StatusTone.neutral:
         return AppColors.bg;
     }

@@ -28,7 +28,7 @@ class InfoPanel extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.secondary,
               fontSize: 9,
               letterSpacing: 0.5,
               fontWeight: FontWeight.w600,

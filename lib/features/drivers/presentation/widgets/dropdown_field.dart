@@ -22,18 +22,15 @@ class DropdownField extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       style: const TextStyle(
-        color: AppColors.textPrimary,
+        color: AppColors.primary,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
       dropdownColor: Colors.white,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 13,
-        ),
-        prefixIcon: Icon(icon, color: AppColors.navy, size: 18),
+        labelStyle: const TextStyle(color: AppColors.secondary, fontSize: 13),
+        prefixIcon: Icon(icon, color: AppColors.primary, size: 18),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
@@ -50,7 +47,7 @@ class DropdownField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       items: items

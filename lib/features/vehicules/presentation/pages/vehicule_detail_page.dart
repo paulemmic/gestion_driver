@@ -4,14 +4,98 @@ import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_document_draft.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_historique_draft.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_historique_entry.dart';
-import 'package:gestion_driver/features/vehicules/presentation/widgets/fuel_card_panel.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/history_tile.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/info_panel.dart';
-import 'package:gestion_driver/features/vehicules/presentation/widgets/missing_operational_cards_hint.dart';
-import 'package:gestion_driver/features/vehicules/presentation/widgets/toll_tag_panel.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/vehicule_doc_card.dart';
+import 'package:gestion_driver/features/vehicules/presentation/widgets/vidange_card.dart';
 import 'package:gestion_driver/features/vehicules/services/document.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
+
+enum DocumentTypeOption {
+  assurance,
+  carteGrise,
+  visiteTechnique,
+  carteStationnement,
+  patente,
+}
+
+extension DocumentTypeOptionExt on DocumentTypeOption {
+  String get label => switch (this) {
+    DocumentTypeOption.assurance => 'Assurance',
+    DocumentTypeOption.carteGrise => 'Carte grise',
+    DocumentTypeOption.visiteTechnique => 'Visite technique',
+    DocumentTypeOption.carteStationnement => 'Carte de stationnement',
+    DocumentTypeOption.patente => 'Patente',
+  };
+
+  IconData get icon => switch (this) {
+    DocumentTypeOption.assurance => Icons.verified_user_outlined,
+    DocumentTypeOption.carteGrise => Icons.description_outlined,
+    DocumentTypeOption.visiteTechnique => Icons.build_circle_outlined,
+    DocumentTypeOption.carteStationnement => Icons.local_parking_outlined,
+    DocumentTypeOption.patente => Icons.receipt_long_outlined,
+  };
+}
+
+DocumentStatusOption _statusFromExpiryString(String expiryStr) {
+  if (expiryStr.trim().isEmpty) return DocumentStatusOption.valide;
+
+  final parts = expiryStr.trim().split('/');
+  if (parts.length != 3) return DocumentStatusOption.valide;
+
+  final day = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  final year = int.tryParse(parts[2]);
+
+  if (day == null || month == null || year == null) {
+    return DocumentStatusOption.valide;
+  }
+
+  try {
+    final expiry = DateTime(year, month, day);
+    final now = DateTime.now();
+    final daysLeft = expiry.difference(now).inDays;
+
+    if (daysLeft < 0) return DocumentStatusOption.expire;
+    if (daysLeft <= 30) return DocumentStatusOption.bientotExpire;
+    return DocumentStatusOption.valide;
+  } catch (_) {
+    return DocumentStatusOption.valide;
+  }
+}
+
+DateTime? parseDate(String raw) {
+  final parts = raw.trim().split('/');
+  if (parts.length != 3) return null;
+  final day = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  final year = int.tryParse(parts[2]);
+  if (day == null || month == null || year == null) return null;
+  try {
+    final date = DateTime(year, month, day);
+    return date.day == day && date.month == month && date.year == year
+        ? date
+        : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+enum VehiculeAddAction { document /* history */ }
+
+class _ComplianceSummary {
+  const _ComplianceSummary({
+    required this.complianceStatus,
+    required this.complianceTone,
+    required this.nextExpiration,
+    required this.nextExpirationTone,
+  });
+
+  final String complianceStatus;
+  final StatusTone complianceTone;
+  final String nextExpiration;
+  final StatusTone nextExpirationTone;
+}
 
 class VehiculeDetailPage extends StatefulWidget {
   const VehiculeDetailPage({super.key, required this.vehicule});
@@ -45,7 +129,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
         documents = docs;
         isLoadingDocuments = false;
       });
-      seedHistory(); // seed only once we have the real count
+      seedHistory();
     } on DocumentServiceException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -95,12 +179,12 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                 onTap: () =>
                     Navigator.of(modalContext).pop(VehiculeAddAction.document),
               ),
-              ListTile(
-                leading: const Icon(Icons.history_edu_outlined),
-                title: const Text('Ajouter un historique'),
-                onTap: () =>
-                    Navigator.of(modalContext).pop(VehiculeAddAction.history),
-              ),
+              // ListTile(
+              //   leading: const Icon(Icons.history_edu_outlined),
+              //   title: const Text('Ajouter un historique'),
+              //   onTap: () =>
+              //       Navigator.of(modalContext).pop(VehiculeAddAction.history),
+              // ),
             ],
           ),
         );
@@ -111,19 +195,24 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
 
     switch (action) {
       case VehiculeAddAction.document:
-        await openAddDocumentDialog();
-      case VehiculeAddAction.history:
-        await openAddHistoryDialog();
+        await openDocumentDialog();
+      // case VehiculeAddAction.history:
+      //   await openAddHistoryDialog();
     }
   }
 
-  Future<void> openAddDocumentDialog() async {
-    final titleCtrl = TextEditingController();
-    final subtitleCtrl = TextEditingController();
-    final expiryCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+  Future<void> openDocumentDialog({int? editIndex}) async {
+    final isEditing = editIndex != null;
+    final existing = isEditing ? documents[editIndex] : null;
 
-    DocumentStatusOption status = DocumentStatusOption.valide;
+    // Pre-fill when editing
+    DocumentTypeOption docType = existing != null
+        ? _typeFromTitle(existing.title)
+        : DocumentTypeOption.assurance;
+
+    final subtitleCtrl = TextEditingController(text: existing?.subtitle ?? '');
+    final expiryCtrl = TextEditingController(text: existing?.extra ?? '');
+    final formKey = GlobalKey<FormState>();
 
     final draft = await showDialog<VehiculeDocumentDraft>(
       context: context,
@@ -131,28 +220,45 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
             return AlertDialog(
-              title: const Text('Ajouter un document'),
+              backgroundColor: AppColors.white,
+              title: Text(
+                isEditing ? 'Modifier le document' : 'Ajouter un document',
+              ),
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
-                        controller: titleCtrl,
-                        textCapitalization: TextCapitalization.sentences,
+                      // ── Type de document (menu déroulant) ──────────────
+                      DropdownButtonFormField<DocumentTypeOption>(
+                        value: docType,
                         decoration: const InputDecoration(
                           labelText: 'Type de document',
-                          hintText: 'Assurance, Carte grise...',
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Ce champ est requis';
-                          }
-                          return null;
+                        items: DocumentTypeOption.values.map((value) {
+                          return DropdownMenuItem<DocumentTypeOption>(
+                            value: value,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  value.icon,
+                                  size: 18,
+                                  color: AppColors.secondary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(value.label),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setModalState(() => docType = value);
                         },
                       ),
                       const SizedBox(height: 12),
+
                       TextFormField(
                         controller: subtitleCtrl,
                         textCapitalization: TextCapitalization.sentences,
@@ -162,28 +268,114 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<DocumentStatusOption>(
-                        initialValue: status,
-                        decoration: const InputDecoration(labelText: 'Statut'),
-                        items: DocumentStatusOption.values.map((value) {
-                          return DropdownMenuItem<DocumentStatusOption>(
-                            value: value,
-                            child: Text(value.label),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setModalState(() => status = value);
-                        },
-                      ),
-                      const SizedBox(height: 12),
+
                       TextFormField(
                         controller: expiryCtrl,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          labelText: 'Expiration / Référence',
-                          hintText: 'Ex: 12 Mars 2027',
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Date d\'expiration',
+                          hintText: 'jj/mm/aaaa',
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 18,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            onPressed: () async {
+                              final selectedDate = await showDatePicker(
+                                context: modalContext,
+                                initialDate:
+                                    parseDate(expiryCtrl.text) ??
+                                    DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: ColorScheme.light(
+                                        primary: AppColors.primary,
+                                        onPrimary: Colors.white,
+                                        surface: Colors.white,
+                                        onSurface: AppColors.primary,
+                                      ),
+                                      dialogBackgroundColor: AppColors.white,
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+
+                              if (selectedDate != null) {
+                                final formatted =
+                                    '${selectedDate.day.toString().padLeft(2, '0')}/'
+                                    '${selectedDate.month.toString().padLeft(2, '0')}/'
+                                    '${selectedDate.year}';
+                                expiryCtrl.text = formatted;
+                                setModalState(() {});
+                              }
+                            },
+                          ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'La date est requise';
+                          }
+                          final parts = value.trim().split('/');
+                          if (parts.length != 3) {
+                            return 'Format attendu : jj/mm/aaaa';
+                          }
+
+                          final day = int.parse(parts[0]);
+                          final month = int.parse(parts[1]);
+                          final year = int.parse(parts[2]);
+
+                          try {
+                            final date = DateTime(year, month, day);
+
+                            if (date.day != day ||
+                                date.month != month ||
+                                date.year != year) {
+                              return 'Date invalide';
+                            }
+                            return null;
+                          } catch (e) {
+                            return 'Format invalide';
+                          }
+                        },
+                      ),
+
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: expiryCtrl,
+                        builder: (_, val, __) {
+                          if (val.text.length < 10) {
+                            return const SizedBox.shrink();
+                          }
+                          final deduced = _statusFromExpiryString(val.text);
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: deduced.tone.foregroundColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Statut déduit : ${deduced.badgeLabel}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: deduced.tone.foregroundColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -199,15 +391,15 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     if (!formKey.currentState!.validate()) return;
                     Navigator.of(dialogContext).pop(
                       VehiculeDocumentDraft(
-                        title: titleCtrl.text.trim(),
+                        title: docType.label,
                         subtitle: subtitleCtrl.text.trim(),
-                        status: status,
+                        status: _statusFromExpiryString(expiryCtrl.text),
                         expiry: expiryCtrl.text.trim(),
                       ),
                     );
                   },
                   icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Ajouter'),
+                  label: Text(isEditing ? 'Enregistrer' : 'Ajouter'),
                 ),
               ],
             );
@@ -219,53 +411,91 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     if (draft == null) return;
 
     final document = VehiculeDocument(
-      icon: _iconForDocumentTitle(draft.title),
+      icon: _typeFromTitle(draft.title).icon,
       title: draft.title,
       subtitle: draft.subtitle.isEmpty ? 'Ajout manuel' : draft.subtitle,
       status: draft.status.badgeLabel,
       tone: draft.status.tone,
-      extra: draft.expiry.isEmpty ? 'Date non renseignée' : draft.expiry,
+      extra: draft.expiry,
       extraTone: draft.status.tone,
     );
 
-    setState(() {
-      documents.insert(0, document);
-      history.insert(
-        0,
-        VehiculeHistoriqueEntry(
-          title: 'Document ajouté',
-          description: '${draft.title} ajouté au dossier du véhicule.',
-          timestamp: DateTime.now(),
-          icon: Icons.upload_file_outlined,
-        ),
-      );
-    });
+    if (isEditing) {
+      setState(() {
+        documents[editIndex] = document;
+        history.insert(
+          0,
+          VehiculeHistoriqueEntry(
+            title: 'Document modifié',
+            description: '${draft.title} mis à jour dans le dossier.',
+            timestamp: DateTime.now(),
+            icon: Icons.edit_outlined,
+          ),
+        );
+      });
 
-    try {
-      await documentService.addDocument(
-        vehiculeId: widget.vehicule.id!,
-        document: document,
-      );
+      try {
+        await documentService.updateDocument(
+          vehiculeId: widget.vehicule.id!,
+          document: document,
+          firestoreId: "",
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Document "${draft.title}" mis à jour avec succès.'),
+          ),
+        );
+      } on DocumentServiceException catch (e) {
+        if (!mounted) return;
+        // Roll back optimistic update
+        setState(() => documents[editIndex] = existing!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.accent,
+            content: Text('Erreur : ${e.message}'),
+          ),
+        );
+      }
+    } else {
+      setState(() {
+        documents.insert(0, document);
+        history.insert(
+          0,
+          VehiculeHistoriqueEntry(
+            title: 'Document ajouté',
+            description: '${draft.title} ajouté au dossier du véhicule.',
+            timestamp: DateTime.now(),
+            icon: Icons.upload_file_outlined,
+          ),
+        );
+      });
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Document "${draft.title}" ajouté avec succès.'),
-        ),
-      );
-    } on DocumentServiceException catch (e) {
-      // Roll back optimistic insert
-      if (!mounted) return;
-      setState(() => documents.removeAt(0));
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.red,
-          content: Text('Erreur : ${e.message}'),
-        ),
-      );
+      try {
+        await documentService.addDocument(
+          vehiculeId: widget.vehicule.id!,
+          document: document,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Document "${draft.title}" ajouté avec succès.'),
+          ),
+        );
+      } on DocumentServiceException catch (e) {
+        if (!mounted) return;
+        setState(() => documents.removeAt(0));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.accent,
+            content: Text('Erreur : ${e.message}'),
+          ),
+        );
+      }
     }
   }
 
@@ -291,14 +521,14 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     widget.vehicule.plaque,
                     style: const TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondary,
                       fontSize: 12,
                     ),
                   ),
@@ -308,7 +538,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                       child: Center(
                         child: Text(
                           'Aucun historique pour le moment.',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: AppColors.secondary),
                         ),
                       ),
                     )
@@ -331,8 +561,8 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
   }
 
   Future<void> openAddHistoryDialog() async {
-    final titleCtrl = TextEditingController();
-    final descriptionCtrl = TextEditingController();
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     HistoryEntryType type = HistoryEntryType.maintenance;
 
@@ -342,6 +572,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
             return AlertDialog(
+              backgroundColor: AppColors.white,
               title: const Text('Ajouter un historique'),
               content: SingleChildScrollView(
                 child: Form(
@@ -365,7 +596,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        controller: titleCtrl,
+                        controller: titleController,
                         textCapitalization: TextCapitalization.sentences,
                         decoration: const InputDecoration(
                           labelText: 'Titre',
@@ -380,7 +611,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        controller: descriptionCtrl,
+                        controller: descriptionController,
                         textCapitalization: TextCapitalization.sentences,
                         maxLines: 3,
                         decoration: const InputDecoration(
@@ -403,8 +634,8 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     Navigator.of(dialogContext).pop(
                       VehiculeHistoriqueDraft(
                         type: type,
-                        title: titleCtrl.text.trim(),
-                        description: descriptionCtrl.text.trim(),
+                        title: titleController.text.trim(),
+                        description: descriptionController.text.trim(),
                       ),
                     );
                   },
@@ -443,22 +674,86 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     );
   }
 
-  IconData _iconForDocumentTitle(String title) {
+  DocumentTypeOption _typeFromTitle(String title) {
     final normalized = title.toLowerCase();
-    if (normalized.contains('assurance')) return Icons.verified_user_outlined;
-    if (normalized.contains('grise')) return Icons.description_outlined;
-    if (normalized.contains('visite')) return Icons.build_circle_outlined;
-    if (normalized.contains('patente')) return Icons.receipt_long_outlined;
-    if (normalized.contains('stationnement'))
-      return Icons.local_parking_outlined;
-    return Icons.insert_drive_file_outlined;
+    if (normalized.contains('assurance')) return DocumentTypeOption.assurance;
+    if (normalized.contains('grise')) return DocumentTypeOption.carteGrise;
+    if (normalized.contains('visite'))
+      return DocumentTypeOption.visiteTechnique;
+    if (normalized.contains('stationnement')) {
+      return DocumentTypeOption.carteStationnement;
+    }
+    if (normalized.contains('patente')) return DocumentTypeOption.patente;
+    return DocumentTypeOption.assurance;
+  }
+
+  _ComplianceSummary _buildComplianceSummary() {
+    if (isLoadingDocuments || documents.isEmpty) {
+      return _ComplianceSummary(
+        complianceStatus: '',
+        complianceTone: DocumentStatusOption.valide.tone,
+        nextExpiration: '',
+        nextExpirationTone: DocumentStatusOption.valide.tone,
+      );
+    }
+
+    final now = DateTime.now();
+    bool hasExpired = false;
+    bool hasSoon = false;
+    DateTime? soonest;
+
+    for (final doc in documents) {
+      final date = parseDate(doc.extra);
+      if (date == null) continue;
+
+      final days = date.difference(now).inDays;
+      if (days < 0) {
+        hasExpired = true;
+      } else if (days <= 30) {
+        hasSoon = true;
+      }
+
+      if (date.isAfter(now) && (soonest == null || date.isBefore(soonest))) {
+        soonest = date;
+      }
+    }
+
+    final complianceStatus = switch ((hasExpired, hasSoon)) {
+      (true, _) => 'Non conforme',
+      (false, true) => 'Attention',
+      _ => 'Conforme',
+    };
+
+    final complianceTone = switch ((hasExpired, hasSoon)) {
+      (true, _) => DocumentStatusOption.expire.tone,
+      (false, true) => DocumentStatusOption.bientotExpire.tone,
+      _ => DocumentStatusOption.valide.tone,
+    };
+
+    final nextExpiration = soonest == null
+        ? ''
+        : '${soonest.day.toString().padLeft(2, '0')}/'
+              '${soonest.month.toString().padLeft(2, '0')}/'
+              '${soonest.year}';
+
+    final nextExpirationTone = soonest == null
+        ? DocumentStatusOption.valide.tone
+        : soonest.difference(now).inDays <= 30
+        ? DocumentStatusOption.bientotExpire.tone
+        : DocumentStatusOption.valide.tone;
+
+    return _ComplianceSummary(
+      complianceStatus: complianceStatus,
+      complianceTone: complianceTone,
+      nextExpiration: nextExpiration,
+      nextExpirationTone: nextExpirationTone,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final vehicule = widget.vehicule;
-    final fuelCard = vehicule.fuelCard;
-    final tollTag = vehicule.tollTag;
+    final complianceSummary = _buildComplianceSummary();
 
     return PopScope(
       canPop: false,
@@ -469,7 +764,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
         backgroundColor: AppColors.bg,
         appBar: AppBar(
           backgroundColor: Colors.white,
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.primary,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, size: 18),
             onPressed: () => Navigator.of(context).pop(documents),
@@ -479,25 +774,22 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
             children: [
               const Text(
                 'Vehicules',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AppColors.secondary, fontSize: 13),
               ),
               const Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: AppColors.secondary,
                 size: 16,
               ),
               Text(
                 vehicule.plaque,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: AppColors.primary, fontSize: 13),
               ),
             ],
           ),
-          actions: [
-            IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          ],
+          // actions: [
+          //   IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          // ],
         ),
         body: SingleChildScrollView(
           child: Column(
@@ -514,7 +806,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -528,14 +820,14 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                           decoration: BoxDecoration(
                             color: AppColors.bg,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: AppColors.primary),
                           ),
                           child: Text(
                             vehicule.plaque,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -552,7 +844,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         Text(
                           vehicule.badgeLabel,
                           style: const TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondary,
                             fontSize: 11,
                             letterSpacing: 0.3,
                             fontWeight: FontWeight.w500,
@@ -564,12 +856,15 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.white,
+                            ),
                             onPressed: _openAddActionSheet,
                             icon: const Icon(
                               Icons.add_circle_outline,
                               size: 16,
-                              color: AppColors.textPrimary,
+                              color: AppColors.primary,
                             ),
                             label: const Text('Ajouter'),
                           ),
@@ -577,6 +872,9 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.grey,
+                            ),
                             onPressed: openHistorySheet,
                             icon: const Icon(Icons.history, size: 16),
                             label: const Text('Historique'),
@@ -596,26 +894,54 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     Expanded(
                       child: InfoPanel(
                         title: 'ÉTAT DE CONFORMITÉ',
-                        value: vehicule.complianceStatus,
-                        toneColor: vehicule.complianceTone.foregroundColor,
+                        value: complianceSummary.complianceStatus,
+                        toneColor:
+                            complianceSummary.complianceTone.foregroundColor,
                         backgroundColor:
-                            vehicule.complianceTone.backgroundColor,
+                            complianceSummary.complianceTone.backgroundColor,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: InfoPanel(
                         title: 'PROCHAINE EXPIRATION',
-                        value: vehicule.nextExpiration,
-                        toneColor: vehicule.nextExpirationTone.foregroundColor,
-                        backgroundColor:
-                            vehicule.nextExpirationTone.backgroundColor,
+                        value: complianceSummary.nextExpiration,
+                        toneColor: complianceSummary
+                            .nextExpirationTone
+                            .foregroundColor,
+                        backgroundColor: complianceSummary
+                            .nextExpirationTone
+                            .backgroundColor,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
+
+              if (vehicule.kilometrage != null &&
+                  vehicule.kilometrage! > 0) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ENTRETIEN',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      VidangeCard(kilometrage: vehicule.kilometrage!),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -625,15 +951,13 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     const Text(
                       'DOCUMENTS OBLIGATOIRES',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.secondary,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
                       ),
                     ),
                     const SizedBox(height: 10),
-
-                    // Loading state
                     if (isLoadingDocuments)
                       const Center(
                         child: Padding(
@@ -641,7 +965,6 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                           child: CircularProgressIndicator(),
                         ),
                       )
-                    // Error state
                     else if (loadError != null)
                       Container(
                         width: double.infinity,
@@ -649,13 +972,13 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.red),
+                          border: Border.all(color: AppColors.accent),
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.error_outline,
-                              color: AppColors.red,
+                              color: AppColors.accent,
                               size: 16,
                             ),
                             const SizedBox(width: 8),
@@ -663,7 +986,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                               child: Text(
                                 loadError!,
                                 style: const TextStyle(
-                                  color: AppColors.red,
+                                  color: AppColors.accent,
                                   fontSize: 12,
                                 ),
                               ),
@@ -681,7 +1004,6 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                           ],
                         ),
                       )
-                    // Empty state
                     else if (documents.isEmpty)
                       Container(
                         width: double.infinity,
@@ -689,20 +1011,25 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: AppColors.grey),
                         ),
                         child: const Text(
                           'Aucun document pour le moment. Utilisez "Ajouter".',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondary,
                             fontSize: 12,
                           ),
                         ),
                       )
-                    // Document list
                     else
                       for (var i = 0; i < documents.length; i++) ...[
-                        VehiculeDocCard(document: documents[i]),
+                        // ── Card + bouton modifier ────────────────────
+                        GestureDetector(
+                          onTap: () => openDocumentDialog(editIndex: i),
+                          child: Stack(
+                            children: [VehiculeDocCard(document: documents[i])],
+                          ),
+                        ),
                         if (i < documents.length - 1)
                           const SizedBox(height: 10),
                       ],
@@ -710,34 +1037,6 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'CARTES OPÉRATIONNELLES',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (fuelCard == null && tollTag == null)
-                      const MissingOperationalCardsHint()
-                    else ...[
-                      if (fuelCard != null) FuelCardPanel(card: fuelCard),
-                      if (fuelCard != null && tollTag != null)
-                        const SizedBox(height: 10),
-                      if (tollTag != null) TollTagPanel(tag: tollTag),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
             ],
           ),
         ),

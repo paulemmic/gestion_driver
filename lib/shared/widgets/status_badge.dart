@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
 
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({super.key, required this.label, required this.tone});
-
   final String label;
   final StatusTone tone;
+
+  const StatusBadge({
+    super.key,
+    required this.label,
+    required this.tone,
+    required status,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -12,11 +12,11 @@ class MissingOperationalCardsHint extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.grey),
       ),
       child: const Text(
         'Aucune carte opérationnelle disponible pour ce véhicule.',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        style: TextStyle(color: AppColors.secondary, fontSize: 12),
       ),
     );
   }

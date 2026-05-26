@@ -153,7 +153,6 @@ class Chauffeur {
     );
   }
 
-  // ─── Calcul automatique de l'alerte ────────────────────────
   static ChauffeurAlert computeAlert({
     DateTime? dateExpirationPermis,
     DateTime? dateExpirationVisite,

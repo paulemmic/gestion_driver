@@ -13,7 +13,7 @@ class StatsBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
-        color: AppColors.navy,
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -37,7 +37,7 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final valueColor = item.tone == StatusTone.danger
-        ? AppColors.red
+        ? AppColors.accent
         : Colors.white;
 
     return Column(

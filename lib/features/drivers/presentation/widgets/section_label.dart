@@ -12,13 +12,13 @@ class SectionLabel extends StatelessWidget {
         Container(
           width: 3,
           height: 14,
-          color: AppColors.navy,
+          color: AppColors.primary,
           margin: const EdgeInsets.only(right: 8),
         ),
         Text(
           label,
           style: const TextStyle(
-            color: AppColors.textSecondary,
+            color: AppColors.secondary,
             fontSize: 10,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.4,

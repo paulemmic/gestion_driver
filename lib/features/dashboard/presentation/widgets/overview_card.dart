@@ -31,10 +31,7 @@ class OverviewCard extends StatelessWidget {
           Expanded(
             child: Text(
               item.title,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: AppColors.secondary, fontSize: 14),
             ),
           ),
           Text(

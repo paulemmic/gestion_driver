@@ -13,3 +13,11 @@ const couleurs = [
 
 const colorSaumon = Color(0xFFF3774D);
 const colorTurquoise = Colors.teal;
+
+const List<String> categories = ['A', 'B', 'Toutes catégories'];
+
+String formatDate(DateTime? date) {
+  if (date == null) return '—';
+  return '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
+}

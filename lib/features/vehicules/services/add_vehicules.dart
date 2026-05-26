@@ -5,6 +5,7 @@ import 'package:gestion_driver/shared/models/status_tone.dart';
 import 'package:uuid/uuid.dart';
 
 class AddVehicules {
+  static final Uuid _uuid = Uuid();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   static String _formatKm(int km) {
@@ -23,7 +24,7 @@ class AddVehicules {
     required String statut,
     String? notes,
   }) {
-    final id = 'VH-${const Uuid().v4().substring(0, 6).toUpperCase()}';
+    final id = 'VH-${_uuid.v4().substring(0, 6).toUpperCase()}';
 
     final StatusTone badgeTone = switch (statut) {
       'En maintenance' => StatusTone.danger,
@@ -62,12 +63,17 @@ class AddVehicules {
   }
 
   Future<void> addVehicule(Map<String, dynamic> vehiculeMap, String id) async {
-    // Doublon plaque
-    final plaqueSnap = await firestore
-        .collection('vehicules')
-        .where('plaque', isEqualTo: vehiculeMap['plaque'])
-        .limit(1)
-        .get();
+    final collection = firestore.collection('vehicules');
+    final duplicateChecks = await Future.wait([
+      collection
+          .where('plaque', isEqualTo: vehiculeMap['plaque'])
+          .limit(1)
+          .get(),
+      collection.where('vin', isEqualTo: vehiculeMap['vin']).limit(1).get(),
+    ]);
+
+    final plaqueSnap = duplicateChecks[0];
+    final vinSnap = duplicateChecks[1];
 
     if (plaqueSnap.docs.isNotEmpty) {
       throw Exception(
@@ -75,18 +81,11 @@ class AddVehicules {
       );
     }
 
-    // Doublon VIN
-    final vinSnap = await firestore
-        .collection('vehicules')
-        .where('vin', isEqualTo: vehiculeMap['vin'])
-        .limit(1)
-        .get();
-
     if (vinSnap.docs.isNotEmpty) {
       throw Exception('Un véhicule avec ce numéro VIN existe déjà.');
     }
 
-    await firestore.collection('vehicules').doc(id).set(vehiculeMap);
+    await collection.doc(id).set(vehiculeMap);
   }
 
   Stream<List<Vehicule>> streamAll() {
@@ -94,6 +93,9 @@ class AddVehicules {
         .collection('vehicules')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(Vehicule.fromFirestore).toList());
+        .map(
+          (snap) =>
+              snap.docs.map(Vehicule.fromFirestore).toList(growable: false),
+        );
   }
 }

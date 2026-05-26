@@ -1,4 +1,3 @@
-// features/dashboard/services/dashboard_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
@@ -12,7 +11,7 @@ class DashboardService {
   Stream<List<DashboardDocumentAlert>> streamAlerts() {
     final chauffeursStream = firestore.collection('chauffeurs').snapshots();
 
-    final vehiculesStream = firestore.collection('vehicules').snapshots();
+    final _vehiculesStream = firestore.collection('vehicules').snapshots();
 
     return chauffeursStream.asyncMap((chauffeursSnap) async {
       final vehiculesSnap = await firestore.collection('vehicules').get();
@@ -142,19 +141,19 @@ class DashboardService {
           title: 'Conducteurs actifs',
           value: '$chauffeursActifs/$totalChauffeurs',
           icon: Icons.person,
-          color: AppColors.blue,
+          color: AppColors.info,
         ),
         DashboardOverviewItem(
           title: 'Alertes documents',
           value: '$alertCount',
           icon: Icons.warning_amber,
-          color: AppColors.amber,
+          color: AppColors.warning,
         ),
         DashboardOverviewItem(
           title: 'Véhicules actifs',
           value: '$vehiculesActifs/$totalVehicules',
           icon: Icons.local_shipping,
-          color: AppColors.green,
+          color: AppColors.succe,
         ),
       ];
     });

@@ -16,7 +16,7 @@ class FuelCardPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: const Border(left: BorderSide(color: AppColors.blue, width: 3)),
+        border: const Border(left: BorderSide(color: AppColors.info, width: 3)),
         boxShadow: AppShadows.subtle,
       ),
       child: Column(
@@ -24,13 +24,17 @@ class FuelCardPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              StatusBadge(label: card.status, tone: card.tone),
+              StatusBadge(
+                label: card.status,
+                tone: card.tone,
+                status: card.status,
+              ),
               const Spacer(),
               Container(
                 width: 42,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: AppColors.navy,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Center(
@@ -49,16 +53,13 @@ class FuelCardPanel extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             card.subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.secondary, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Row(
@@ -69,7 +70,7 @@ class FuelCardPanel extends StatelessWidget {
                   const Text(
                     'EXPIRATION',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondary,
                       fontSize: 9,
                       letterSpacing: 0.5,
                     ),
@@ -77,7 +78,7 @@ class FuelCardPanel extends StatelessWidget {
                   Text(
                     card.expiry,
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppColors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -85,11 +86,7 @@ class FuelCardPanel extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              const Icon(
-                Icons.qr_code_2,
-                color: AppColors.textSecondary,
-                size: 28,
-              ),
+              const Icon(Icons.qr_code_2, color: AppColors.secondary, size: 28),
             ],
           ),
         ],

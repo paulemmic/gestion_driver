@@ -1,4 +1,3 @@
-// features/dashboard/presentation/pages/dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/features/dashboard/data/services/dashboard_service.dart';
@@ -129,19 +128,19 @@ class _NoAlerts extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.check_circle_outline, color: AppColors.green, size: 40),
+          Icon(Icons.check_circle_outline, color: AppColors.succe, size: 40),
           SizedBox(height: 10),
           Text(
             'Aucune alerte document',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
           SizedBox(height: 4),
           Text(
             'Tous les documents sont à jour.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: AppColors.secondary, fontSize: 12),
           ),
         ],
       ),
@@ -158,18 +157,18 @@ class _ErrorTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.red.withOpacity(0.08),
+        color: AppColors.accent.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.red.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.red, size: 18),
+          const Icon(Icons.error_outline, color: AppColors.accent, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: AppColors.red, fontSize: 13),
+              style: const TextStyle(color: AppColors.accent, fontSize: 13),
             ),
           ),
         ],

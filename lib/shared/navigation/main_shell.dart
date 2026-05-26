@@ -29,7 +29,7 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: AppColors.navy,
+          color: AppColors.primary,
           boxShadow: AppShadows.card,
         ),
         child: SafeArea(
@@ -95,7 +95,7 @@ class _NavDestination extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: active ? AppColors.blue : AppColors.textSecondary,
+              color: active ? AppColors.white : AppColors.black,
             ),
             const SizedBox(height: 2),
             Text(
@@ -104,7 +104,7 @@ class _NavDestination extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: active ? AppColors.blue : AppColors.textSecondary,
+                color: active ? AppColors.white : AppColors.black,
               ),
             ),
           ],

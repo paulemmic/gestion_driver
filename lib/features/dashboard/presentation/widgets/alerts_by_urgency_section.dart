@@ -32,19 +32,19 @@ class AlertsByUrgencySection extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 4),
           const Text(
             'Assurance, visite technique et patente triees par priorite.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: AppColors.secondary, fontSize: 12),
           ),
           const SizedBox(height: 14),
           for (var index = 0; index < sortedAlerts.length; index++) ...[
             _AlertTile(alert: sortedAlerts[index]),
             if (index < sortedAlerts.length - 1)
-              const Divider(height: 18, color: AppColors.border),
+              const Divider(height: 18, color: AppColors.grey),
           ],
         ],
       ),
@@ -76,11 +76,15 @@ class _AlertTile extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
         ),
-        StatusBadge(label: alert.urgencyLabel.toUpperCase(), tone: alert.tone),
+        StatusBadge(
+          label: alert.urgencyLabel.toUpperCase(),
+          tone: alert.tone,
+          status: alert.status,
+        ),
       ],
     );
   }

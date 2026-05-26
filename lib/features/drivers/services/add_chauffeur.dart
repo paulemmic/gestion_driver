@@ -8,6 +8,7 @@ import 'package:gestion_driver/shared/models/status_tone.dart';
 import 'package:uuid/uuid.dart';
 
 class AddChauffeur {
+  static final Uuid _uuid = Uuid();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
 
@@ -15,10 +16,7 @@ class AddChauffeur {
     Map<String, dynamic> chauffeurInfoMap,
     String id,
   ) async {
-    return await firestore
-        .collection('chauffeurs')
-        .doc(id)
-        .set(chauffeurInfoMap);
+    return firestore.collection('chauffeurs').doc(id).set(chauffeurInfoMap);
   }
 
   Chauffeur buildFromForm({
@@ -35,7 +33,7 @@ class AddChauffeur {
     DateTime? dateExpirationVisite,
     String? photoUrl,
   }) {
-    final id = 'FA-${const Uuid().v4().substring(0, 4).toUpperCase()}';
+    final id = 'FA-${_uuid.v4().substring(0, 4).toUpperCase()}';
     final now = DateTime.now();
     final soon = now.add(const Duration(days: 30));
 
@@ -103,10 +101,10 @@ class AddChauffeur {
     String id,
     Map<String, dynamic> chauffeurInfoMap,
   ) async {
-    await firestore.collection('chauffeurs').doc(id).set(
-      chauffeurInfoMap,
-      SetOptions(merge: true),
-    );
+    await firestore
+        .collection('chauffeurs')
+        .doc(id)
+        .set(chauffeurInfoMap, SetOptions(merge: true));
   }
 
   Future<String> uploadPhoto({
@@ -138,6 +136,9 @@ class AddChauffeur {
         .collection('chauffeurs')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(Chauffeur.fromFirestore).toList());
+        .map(
+          (snap) =>
+              snap.docs.map(Chauffeur.fromFirestore).toList(growable: false),
+        );
   }
 }

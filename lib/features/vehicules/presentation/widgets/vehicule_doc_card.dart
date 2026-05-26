@@ -27,10 +27,10 @@ class VehiculeDocCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.blueLight,
+              color: AppColors.info.withOpacity(0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(document.icon, color: AppColors.blue, size: 20),
+            child: Icon(document.icon, color: AppColors.info, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -45,18 +45,22 @@ class VehiculeDocCard extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: AppColors.textPrimary,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
-                    StatusBadge(label: document.status, tone: document.tone),
+                    StatusBadge(
+                      label: document.status,
+                      tone: document.tone,
+                      status: document.status,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 3),
                 Text(
                   document.subtitle,
                   style: const TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.secondary,
                     fontSize: 11,
                   ),
                 ),

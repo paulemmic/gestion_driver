@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/core/theme/app_shadows.dart';
 import 'package:gestion_driver/features/drivers/models/chauffeur.dart';
-import 'package:gestion_driver/shared/models/status_tone.dart';
+import 'package:gestion_driver/shared/utils/expire_utils.dart';
 
 class ChauffeurCard extends StatelessWidget {
   const ChauffeurCard({
@@ -16,8 +16,19 @@ class ChauffeurCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alertColor = chauffeur.alert.tone.foregroundColor;
-    final alertBg = chauffeur.alert.tone.backgroundColor;
+    final dates = [
+      chauffeur.dateExpirationPermis,
+      chauffeur.dateExpirationVisite,
+    ].whereType<DateTime>().toList()..sort((a, b) => a.compareTo(b));
+
+    final nearestDate = dates.isNotEmpty ? dates.first : null;
+
+    final expire = chauffeur.conforme && nearestDate == null
+        ? getExpiryInfo(null)
+        : getExpiryInfo(nearestDate);
+
+    final alertColor = expire.color;
+    final alertBg = expire.color.withOpacity(0.08);
 
     return GestureDetector(
       onTap: onTap,
@@ -49,7 +60,7 @@ class ChauffeurCard extends StatelessWidget {
                         : Text(
                             chauffeur.initials,
                             style: const TextStyle(
-                              color: AppColors.navy,
+                              color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -65,13 +76,13 @@ class ChauffeurCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primary,
                           ),
                         ),
                         Text(
                           'ID: ${chauffeur.id}',
                           style: const TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondary,
                             fontSize: 12,
                           ),
                         ),
@@ -80,7 +91,7 @@ class ChauffeurCard extends StatelessWidget {
                   ),
                   const Icon(
                     Icons.chevron_right,
-                    color: AppColors.textSecondary,
+                    color: AppColors.secondary,
                     size: 20,
                   ),
                 ],
@@ -97,11 +108,11 @@ class ChauffeurCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(chauffeur.alert.icon, color: alertColor, size: 15),
+                    Icon(expire.icon, color: alertColor, size: 15),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        chauffeur.alert.label,
+                        expire.label,
                         style: TextStyle(
                           color: alertColor,
                           fontSize: 11,
@@ -127,7 +138,7 @@ class ChauffeurCard extends StatelessWidget {
                   const Text(
                     'ROUTE',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondary,
                       fontSize: 10,
                       letterSpacing: 0.5,
                       fontWeight: FontWeight.w600,

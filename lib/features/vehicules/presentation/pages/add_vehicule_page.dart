@@ -5,39 +5,7 @@ import 'package:gestion_driver/features/vehicules/services/add_vehicules.dart';
 
 enum CarburantType { essence, diesel, electrique, hybride, gpl }
 
-enum VehiculeStatus { actif, maintenance, inactif }
-
-extension CarburantLabel on CarburantType {
-  String get label => switch (this) {
-    CarburantType.essence => 'Essence',
-    CarburantType.diesel => 'Diesel',
-    CarburantType.electrique => 'Électrique',
-    CarburantType.hybride => 'Hybride',
-    CarburantType.gpl => 'GPL',
-  };
-
-  IconData get icon => switch (this) {
-    CarburantType.essence => Icons.local_gas_station,
-    CarburantType.diesel => Icons.oil_barrel,
-    CarburantType.electrique => Icons.bolt,
-    CarburantType.hybride => Icons.eco,
-    CarburantType.gpl => Icons.propane,
-  };
-}
-
-extension StatusLabel on VehiculeStatus {
-  String get label => switch (this) {
-    VehiculeStatus.actif => 'Actif',
-    VehiculeStatus.maintenance => 'En maintenance',
-    VehiculeStatus.inactif => 'Inactif',
-  };
-
-  Color get color => switch (this) {
-    VehiculeStatus.actif => AppColors.green,
-    VehiculeStatus.maintenance => AppColors.red,
-    VehiculeStatus.inactif => Colors.grey,
-  };
-}
+enum VehiculeStatus { actif, enCourse, maintenance, inactif }
 
 class AddVehiculePage extends StatefulWidget {
   const AddVehiculePage({super.key});
@@ -47,38 +15,218 @@ class AddVehiculePage extends StatefulWidget {
 }
 
 class _AddVehiculePageState extends State<AddVehiculePage> {
-  final _formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>();
 
   // Controllers
-  final _marqueCtrl = TextEditingController();
-  final _modeleCtrl = TextEditingController();
-  final _plaqueCtrl = TextEditingController();
-  final _vinCtrl = TextEditingController();
-  final _anneeCtrl = TextEditingController();
-  final _kilometrageCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
+  final marqueController = TextEditingController();
+  final modeleController = TextEditingController();
+  final plaqueController = TextEditingController();
+  final vinController = TextEditingController();
+  final anneeController = TextEditingController();
+  final kilometrageController = TextEditingController();
+  final notesController = TextEditingController();
+  final assuranceController = TextEditingController();
+  final visiteTechController = TextEditingController();
 
-  CarburantType _carburant = CarburantType.essence;
-  VehiculeStatus _status = VehiculeStatus.actif;
+  DateTime? assuranceDate;
+  DateTime? visiteTechDate;
 
-  bool _isSaving = false;
+  CarburantType carburant = CarburantType.essence;
+  VehiculeStatus status = VehiculeStatus.actif;
+
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    anneeController.addListener(updateStatusFromDates);
+  }
+
+  void updateStatusFromDates() {
+    final year = int.tryParse(anneeController.text.trim());
+    if (year == null) return;
+
+    final age = DateTime.now().year - year;
+
+    final newStatus = switch (age) {
+      <= 5 => VehiculeStatus.actif,
+      <= 10 => VehiculeStatus.maintenance,
+      _ => VehiculeStatus.inactif,
+    };
+
+    if (status != newStatus) {
+      setState(() => status = newStatus);
+    }
+
+    // if (assuranceDate == null && visiteTechDate == null) return;
+
+    // final now = DateTime.now();
+    // final soon = now.add(const Duration(days: 30));
+
+    // bool assuranceOk = assuranceDate != null && assuranceDate!.isAfter(soon);
+    // bool visiteTechOk = visiteTechDate != null && visiteTechDate!.isAfter(soon);
+
+    // bool assuranceExpireSoon =
+    //     assuranceDate != null &&
+    //     assuranceDate!.isAfter(now) &&
+    //     assuranceDate!.isAfter(soon);
+    // bool visiteTechExpireSoon =
+    //     visiteTechDate != null &&
+    //     visiteTechDate!.isAfter(now) &&
+    //     visiteTechDate!.isAfter(soon);
+
+    // bool assuranceExpiree =
+    //     assuranceDate != null && assuranceDate!.isBefore(now);
+    // bool visiteTechExpiree =
+    //     visiteTechDate != null && visiteTechDate!.isBefore(now);
+
+    // VehiculeStatus newStatus;
+
+    // if (assuranceExpiree && visiteTechExpiree) {
+    //   newStatus = VehiculeStatus.inactif;
+    // } else if (assuranceExpiree ||
+    //     visiteTechExpiree ||
+    //     assuranceExpireSoon ||
+    //     visiteTechExpireSoon) {
+    //   newStatus = VehiculeStatus.maintenance;
+    // } else if (assuranceOk && visiteTechOk) {
+    //   newStatus = VehiculeStatus.actif;
+    // } else {
+    //   return;
+    // }
+
+    // if (status != newStatus) setState(() => status = newStatus);
+  }
 
   @override
   void dispose() {
-    _marqueCtrl.dispose();
-    _modeleCtrl.dispose();
-    _plaqueCtrl.dispose();
-    _vinCtrl.dispose();
-    _anneeCtrl.dispose();
-    _kilometrageCtrl.dispose();
-    _notesCtrl.dispose();
+    anneeController.removeListener(updateStatusFromDates);
+    marqueController.dispose();
+    modeleController.dispose();
+    plaqueController.dispose();
+    vinController.dispose();
+    anneeController.dispose();
+    kilometrageController.dispose();
+    notesController.dispose();
+    assuranceController.dispose();
+    visiteTechController.dispose();
     super.dispose();
   }
 
-  String? _required(String? v) =>
+  Future<void> pickDate({
+    required TextEditingController controller,
+    required void Function(DateTime) onPicked,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 30)),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      onPicked(picked);
+      controller.text =
+          '${picked.day.toString().padLeft(2, '0')}/'
+          '${picked.month.toString().padLeft(2, '0')}/'
+          '${picked.year}';
+      updateStatusFromDates();
+    }
+  }
+
+  Widget dateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required DateTime? date,
+    required void Function(DateTime) onPicked,
+  }) {
+    Color? badgeColor;
+    String? badgeText;
+
+    if (date != null) {
+      final now = DateTime.now();
+      final diff = date.difference(now).inDays;
+
+      if (date.isBefore(now)) {
+        badgeColor = AppColors.accent;
+        badgeText = 'Expiré';
+      } else if (diff <= 30) {
+        badgeColor = AppColors.warning;
+        badgeText = 'Expire bientôt';
+      } else {
+        badgeColor = AppColors.succe;
+        badgeText = 'Valide';
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          onTap: () => pickDate(controller: controller, onPicked: onPicked),
+          decoration:
+              fieldDecoration(
+                label: label,
+                hint: 'JJ/MM/AAAA',
+                icon: icon,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  onPressed: () =>
+                      pickDate(controller: controller, onPicked: onPicked),
+                  icon: const Icon(
+                    Icons.edit_calendar_outlined,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                ),
+              ),
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? 'Ce champ est requis' : null,
+        ),
+        if (badgeText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  String? required(String? v) =>
       (v == null || v.trim().isEmpty) ? 'Ce champ est requis' : null;
 
-  String? _validateAnnee(String? v) {
+  String? validateAnnee(String? v) {
     if (v == null || v.trim().isEmpty) return 'Ce champ est requis';
     final year = int.tryParse(v);
     if (year == null) return 'Année invalide';
@@ -87,7 +235,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
     return null;
   }
 
-  String? _validateKm(String? v) {
+  String? validateKm(String? v) {
     if (v == null || v.trim().isEmpty) return null; // optional
     if (int.tryParse(v.replaceAll(' ', '')) == null) {
       return 'Nombre invalide';
@@ -95,42 +243,44 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
     return null;
   }
 
-  final _service = AddVehicules();
+  final service = AddVehicules();
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
+  Future<void> submit() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => isSaving = true);
 
     try {
-      final vehicule = _service.buildFromForm(
-        marque: _marqueCtrl.text.trim(),
-        modele: _modeleCtrl.text.trim(),
-        plaque: _plaqueCtrl.text.trim(),
-        vin: _vinCtrl.text.trim(),
-        annee: int.parse(_anneeCtrl.text.trim()),
-        kilometrage: _kilometrageCtrl.text.trim().isEmpty
+      final vehicule = service.buildFromForm(
+        marque: marqueController.text.trim(),
+        modele: modeleController.text.trim(),
+        plaque: plaqueController.text.trim(),
+        vin: vinController.text.trim(),
+        annee: int.parse(anneeController.text.trim()),
+        kilometrage: kilometrageController.text.trim().isEmpty
             ? null
-            : int.tryParse(_kilometrageCtrl.text.trim()),
-        carburant: _carburant.label,
-        statut: _status.label,
-        notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+            : int.tryParse(kilometrageController.text.trim()),
+        carburant: carburant.name,
+        statut: status.name,
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
       );
 
       // 2. Enregistrer dans Firestore
-      await _service.addVehicule(vehicule.toMap(), vehicule.id!);
+      await service.addVehicule(vehicule.toMap(), vehicule.id!);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: AppColors.navy,
+          backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           content: Row(
             children: [
-              const Icon(Icons.check_circle_outline, color: AppColors.green),
+              const Icon(Icons.check_circle_outline, color: AppColors.succe),
               const SizedBox(width: 10),
               Text(
                 '${vehicule.name} ajouté avec succès',
@@ -165,11 +315,11 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
         ),
       );
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) setState(() => isSaving = false);
     }
   }
 
-  Widget _sectionLabel(String label) => Padding(
+  Widget sectionLabel(String label) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Text(
       label,
@@ -177,12 +327,12 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.2,
-        color: AppColors.navy,
+        color: AppColors.primary,
       ),
     ),
   );
 
-  Widget _card({required Widget child}) => Container(
+  Widget card({required Widget child}) => Container(
     width: double.infinity,
     margin: const EdgeInsets.only(bottom: 20),
     padding: const EdgeInsets.all(18),
@@ -200,7 +350,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
     child: child,
   );
 
-  InputDecoration _fieldDecoration({
+  InputDecoration fieldDecoration({
     required String label,
     required String hint,
     required IconData icon,
@@ -209,7 +359,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
     labelText: label,
     hintText: hint,
     suffixText: suffix,
-    prefixIcon: Icon(icon, size: 18, color: AppColors.navy),
+    prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Color(0xFFDDE3EE)),
@@ -220,31 +370,29 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.navy, width: 1.6),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.red),
+      borderSide: const BorderSide(color: AppColors.accent),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: AppColors.red, width: 1.6),
+      borderSide: const BorderSide(color: AppColors.accent, width: 1.6),
     ),
     filled: true,
     fillColor: const Color(0xFFF7F9FC),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    labelStyle: const TextStyle(color: AppColors.textSecondary),
-    floatingLabelStyle: const TextStyle(color: AppColors.navy),
+    labelStyle: const TextStyle(color: AppColors.secondary),
+    floatingLabelStyle: const TextStyle(color: AppColors.primary),
   );
-
-  // ── Build ───────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.navy,
+        backgroundColor: AppColors.primary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
@@ -266,35 +414,34 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
         centerTitle: false,
       ),
       body: Form(
-        key: _formKey,
+        key: formKey,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
           children: [
-            // ── Informations générales ──────────────────────────────────
-            _sectionLabel('INFORMATIONS GÉNÉRALES'),
-            _card(
+            sectionLabel('INFORMATIONS GÉNÉRALES'),
+            card(
               child: Column(
                 children: [
                   TextFormField(
-                    controller: _marqueCtrl,
+                    controller: marqueController,
                     textCapitalization: TextCapitalization.words,
-                    decoration: _fieldDecoration(
+                    decoration: fieldDecoration(
                       label: 'Marque',
                       hint: 'Toyota, Mercedes, Renault…',
                       icon: Icons.directions_car_outlined,
                     ),
-                    validator: _required,
+                    validator: required,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
-                    controller: _modeleCtrl,
+                    controller: modeleController,
                     textCapitalization: TextCapitalization.words,
-                    decoration: _fieldDecoration(
+                    decoration: fieldDecoration(
                       label: 'Modèle',
                       hint: 'Corolla, Sprinter, Kangoo…',
                       icon: Icons.commute_outlined,
                     ),
-                    validator: _required,
+                    validator: required,
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -302,31 +449,31 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
                       Expanded(
                         flex: 2,
                         child: TextFormField(
-                          controller: _plaqueCtrl,
+                          controller: plaqueController,
                           textCapitalization: TextCapitalization.characters,
-                          decoration: _fieldDecoration(
+                          decoration: fieldDecoration(
                             label: 'Immatriculation',
                             hint: 'AB-123-CD',
                             icon: Icons.credit_card_outlined,
                           ),
-                          validator: _required,
+                          validator: required,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
-                          controller: _anneeCtrl,
+                          controller: anneeController,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(4),
                           ],
-                          decoration: _fieldDecoration(
+                          decoration: fieldDecoration(
                             label: 'Année',
                             hint: '2022',
                             icon: Icons.calendar_today_outlined,
                           ),
-                          validator: _validateAnnee,
+                          validator: validateAnnee,
                         ),
                       ),
                     ],
@@ -336,15 +483,15 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
             ),
 
             // ── Identification ──────────────────────────────────────────
-            _sectionLabel('IDENTIFICATION'),
-            _card(
+            sectionLabel('IDENTIFICATION'),
+            card(
               child: Column(
                 children: [
                   TextFormField(
-                    controller: _vinCtrl,
+                    controller: vinController,
                     textCapitalization: TextCapitalization.characters,
                     maxLength: 17,
-                    decoration: _fieldDecoration(
+                    decoration: fieldDecoration(
                       label: 'Numéro VIN',
                       hint: 'WBA3A5C51DF…',
                       icon: Icons.pin_outlined,
@@ -361,30 +508,52 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
-                    controller: _kilometrageCtrl,
+                    controller: kilometrageController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: _fieldDecoration(
+                    decoration: fieldDecoration(
                       label: 'Kilométrage actuel',
                       hint: '0',
                       icon: Icons.speed_outlined,
                       suffix: 'km',
                     ),
-                    validator: _validateKm,
+                    validator: validateKm,
                   ),
                 ],
               ),
             ),
 
-            _sectionLabel('TYPE DE CARBURANT'),
-            _card(
+            // sectionLabel("DOCUMENT"),
+            // card(
+            //   child: Column(
+            //     children: [
+            //       dateField(
+            //         controller: assuranceController,
+            //         label: "Experation Assurance",
+            //         icon: Icons.shield_outlined,
+            //         date: assuranceDate,
+            //         onPicked: (d) => setState(() => assuranceDate = d),
+            //       ),
+            //       const SizedBox(height: 14),
+            //       dateField(
+            //         controller: visiteTechController,
+            //         label: "Expiration Visite Technique",
+            //         icon: Icons.fact_check_outlined,
+            //         date: visiteTechDate,
+            //         onPicked: (d) => setState(() => visiteTechDate = d),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            sectionLabel('TYPE DE CARBURANT'),
+            card(
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: CarburantType.values.map((type) {
-                  final selected = _carburant == type;
+                  final selected = carburant == type;
                   return GestureDetector(
-                    onTap: () => setState(() => _carburant = type),
+                    onTap: () => setState(() => carburant = type),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.symmetric(
@@ -392,11 +561,11 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.navy : Colors.white,
+                        color: selected ? AppColors.primary : Colors.white,
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
                           color: selected
-                              ? AppColors.navy
+                              ? AppColors.primary
                               : const Color(0xFFDDE3EE),
                           width: 1.5,
                         ),
@@ -405,21 +574,21 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            type.icon,
+                            Icons.local_gas_station_outlined,
                             size: 15,
                             color: selected
                                 ? Colors.white
-                                : AppColors.textSecondary,
+                                : AppColors.secondary,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            type.label,
+                            '${type.name[0].toUpperCase()}${type.name.substring(1)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: selected
                                   ? Colors.white
-                                  : AppColors.textSecondary,
+                                  : AppColors.secondary,
                             ),
                           ),
                         ],
@@ -430,61 +599,83 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
               ),
             ),
 
-            _sectionLabel('STATUT'),
-            _card(
-              child: Column(
-                children: VehiculeStatus.values.map((s) {
-                  final selected = _status == s;
-                  return GestureDetector(
-                    onTap: () => setState(() => _status = s),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? s.color.withOpacity(0.08)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: selected ? s.color : const Color(0xFFDDE3EE),
-                          width: 1.4,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: selected ? s.color : Colors.grey.shade300,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            s.label,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: selected
-                                  ? s.color
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (selected)
-                            Icon(Icons.check_circle, color: s.color, size: 18),
-                        ],
-                      ),
+            sectionLabel('STATUT'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 13,
+                    color: AppColors.secondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Suggéré automatiquement selon l\'année — modifiable',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.secondary,
+                      fontStyle: FontStyle.italic,
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
             ),
+            // ('STATUT'),
+            // card(
+            //   child: Column(
+            //     children: VehiculeStatus.values.map((s) {
+            //       final selected = status == s;
+            //       return GestureDetector(
+            //         onTap: () => setState(() => status = s),
+            //         child: AnimatedContainer(
+            //           duration: const Duration(milliseconds: 160),
+            //           margin: const EdgeInsets.only(bottom: 8),
+            //           padding: const EdgeInsets.symmetric(
+            //             horizontal: 14,
+            //             vertical: 13,
+            //           ),
+            //           decoration: BoxDecoration(
+            //             color: selected
+            //                 ? s.color.withOpacity(0.08)
+            //                 : Colors.transparent,
+            //             borderRadius: BorderRadius.circular(10),
+            //             border: Border.all(
+            //               color: selected ? s.color : const Color(0xFFDDE3EE),
+            //               width: 1.4,
+            //             ),
+            //           ),
+            //           child: Row(
+            //             children: [
+            //               Container(
+            //                 width: 10,
+            //                 height: 10,
+            //                 decoration: BoxDecoration(
+            //                   color: selected ? s.color : Colors.grey.shade300,
+            //                   shape: BoxShape.circle,
+            //                 ),
+            //               ),
+            //               const SizedBox(width: 12),
+            //               Text(
+            //                 s.label,
+            //                 style: TextStyle(
+            //                   fontWeight: FontWeight.w600,
+            //                   fontSize: 14,
+            //                   color: selected
+            //                       ? s.color
+            //                       : AppColors.textSecondary,
+            //                 ),
+            //               ),
+            //               const Spacer(),
+            //               if (selected)
+            //                 Icon(Icons.check_circle, color: s.color, size: 18),
+            //             ],
+            //           ),
+            //         ),
+            //       );
+            //     }).toList(),
+            //   ),
+            // ),
 
             // _sectionLabel('NOTES (OPTIONNEL)'),
             // _card(
@@ -526,16 +717,16 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
         child: SizedBox(
           height: 52,
           child: ElevatedButton(
-            onPressed: _isSaving ? null : _submit,
+            onPressed: isSaving ? null : submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.navy,
-              disabledBackgroundColor: AppColors.navy.withOpacity(0.6),
+              backgroundColor: AppColors.primary,
+              disabledBackgroundColor: AppColors.primary.withOpacity(0.6),
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: _isSaving
+            child: isSaving
                 ? const SizedBox(
                     width: 22,
                     height: 22,

@@ -20,25 +20,25 @@ const dashboardOverviewItems = [
     title: 'Conducteurs actifs',
     value: '142',
     icon: Icons.person,
-    color: AppColors.blue,
+    color: AppColors.info,
   ),
   DashboardOverviewItem(
     title: 'Alertes de documents',
     value: '8',
     icon: Icons.warning_amber,
-    color: AppColors.amber,
+    color: AppColors.accent,
   ),
   DashboardOverviewItem(
     title: 'Véhicules actifs',
     value: '42',
     icon: Icons.local_shipping,
-    color: AppColors.green,
+    color: AppColors.succe,
   ),
   DashboardOverviewItem(
     title: 'Note moyenne',
     value: '4.9★',
     icon: Icons.star,
-    color: AppColors.orange,
+    color: AppColors.warning,
   ),
 ];
 

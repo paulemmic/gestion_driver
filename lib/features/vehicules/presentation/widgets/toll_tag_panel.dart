@@ -16,7 +16,9 @@ class TollTagPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: const Border(left: BorderSide(color: AppColors.red, width: 3)),
+        border: const Border(
+          left: BorderSide(color: AppColors.accent, width: 3),
+        ),
         boxShadow: AppShadows.subtle,
       ),
       child: Column(
@@ -26,11 +28,15 @@ class TollTagPanel extends StatelessWidget {
             children: [
               const Icon(
                 Icons.wifi_tethering,
-                color: AppColors.textSecondary,
+                color: AppColors.secondary,
                 size: 18,
               ),
               const Spacer(),
-              StatusBadge(label: tag.status, tone: tag.tone),
+              StatusBadge(
+                label: tag.status,
+                tone: tag.tone,
+                status: tag.status,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -39,26 +45,27 @@ class TollTagPanel extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             tag.subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.secondary, fontSize: 12),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.battery_alert, color: AppColors.red, size: 14),
+              const Icon(
+                Icons.battery_alert,
+                color: AppColors.accent,
+                size: 14,
+              ),
               const SizedBox(width: 4),
               Text(
                 tag.issue,
                 style: const TextStyle(
-                  color: AppColors.red,
+                  color: AppColors.accent,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -71,8 +78,8 @@ class TollTagPanel extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () {},
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.red,
-                side: const BorderSide(color: AppColors.red),
+                foregroundColor: AppColors.accent,
+                side: const BorderSide(color: AppColors.accent),
               ),
               child: Text(tag.actionLabel),
             ),

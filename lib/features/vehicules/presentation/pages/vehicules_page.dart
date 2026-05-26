@@ -15,24 +15,74 @@ class VehiculesPage extends StatefulWidget {
 }
 
 class _VehiculesPageState extends State<VehiculesPage> {
-  final _service = AddVehicules();
-  final _searchController = TextEditingController();
-  String _searchQuery = '';
+  final service = AddVehicules();
+  final searchController = TextEditingController();
+  late final Stream<List<Vehicule>> _vehiculesStream;
+  String searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _vehiculesStream = service.streamAll();
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
   List<Vehicule> _filtered(List<Vehicule> all) {
-    if (_searchQuery.isEmpty) return all;
-    final q = _searchQuery.toLowerCase();
-    return all.where((v) {
-      return v.name.toLowerCase().contains(q) ||
-          v.plaque.toLowerCase().contains(q) ||
-          (v.vin?.toLowerCase().contains(q) ?? false);
-    }).toList();
+    if (searchQuery.isEmpty) return all;
+    final q = searchQuery.toLowerCase();
+    return all
+        .where((v) {
+          return v.name.toLowerCase().contains(q) ||
+              v.plaque.toLowerCase().contains(q) ||
+              (v.vin?.toLowerCase().contains(q) ?? false);
+        })
+        .toList(growable: false);
+  }
+
+  Widget _buildVehiculeContent(
+    BuildContext context,
+    AsyncSnapshot<List<Vehicule>> snapshot,
+    List<Vehicule> all,
+  ) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (snapshot.hasError) {
+      return _ErrorTile(message: '${snapshot.error}');
+    }
+
+    final vehicules = _filtered(all);
+    if (vehicules.isEmpty) {
+      return const _EmptyState();
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 80),
+      itemCount: vehicules.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        final vehicule = vehicules[index];
+        return VehiculeCard(
+          vehicule: vehicule,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => VehiculeDetailPage(vehicule: vehicule),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -41,7 +91,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
       backgroundColor: AppColors.bg,
       appBar: const FleetAppBar(),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.navy,
+        backgroundColor: AppColors.primary,
         heroTag: null,
         onPressed: () => Navigator.of(
           context,
@@ -49,7 +99,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: StreamBuilder<List<Vehicule>>(
-        stream: _service.streamAll(),
+        stream: _vehiculesStream,
         builder: (context, snapshot) {
           final all = snapshot.data ?? [];
           final actifs = all.where((v) => v.statut == 'Actif').length;
@@ -61,7 +111,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
             children: [
               // ── Header stats dynamiques ──────────────────────────
               Container(
-                color: AppColors.navy,
+                color: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 14,
@@ -69,11 +119,11 @@ class _VehiculesPageState extends State<VehiculesPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _StatBlock(
-                        label: 'ACTIVE NOW',
+                      child: StatBlock(
+                        label: 'ACTIVE MAINTENANT',
                         value: actifs.toString().padLeft(2, '0'),
                         valueColor: Colors.white,
-                        dotColor: AppColors.green,
+                        dotColor: AppColors.succe,
                       ),
                     ),
                     Container(
@@ -83,11 +133,11 @@ class _VehiculesPageState extends State<VehiculesPage> {
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                     Expanded(
-                      child: _StatBlock(
+                      child: StatBlock(
                         label: 'MAINTENANCE',
                         value: enMaintenance.toString().padLeft(2, '0'),
-                        valueColor: AppColors.red,
-                        dotColor: AppColors.red,
+                        valueColor: AppColors.warning,
+                        dotColor: AppColors.warning,
                       ),
                     ),
                   ],
@@ -96,7 +146,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
 
               // ── Body ─────────────────────────────────────────────
               Expanded(
-                child: SingleChildScrollView(
+                child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,22 +156,22 @@ class _VehiculesPageState extends State<VehiculesPage> {
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 12),
 
                       // ── Recherche ─────────────────────────────────
                       TextField(
-                        controller: _searchController,
+                        controller: searchController,
                         onChanged: (v) =>
-                            setState(() => _searchQuery = v.trim()),
+                            setState(() => searchQuery = v.trim()),
                         decoration: const InputDecoration(
                           hintText:
                               'Recherche par modèle, plaque ou numéro VIN...',
                           prefixIcon: Icon(
                             Icons.search,
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondary,
                             size: 20,
                           ),
                           border: InputBorder.none,
@@ -130,45 +180,9 @@ class _VehiculesPageState extends State<VehiculesPage> {
                       const SizedBox(height: 16),
 
                       // ── États ─────────────────────────────────────
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) ...[
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                      ] else if (snapshot.hasError) ...[
-                        _ErrorTile(message: '${snapshot.error}'),
-                      ] else ...[
-                        Builder(
-                          builder: (_) {
-                            final vehicules = _filtered(all);
-                            if (vehicules.isEmpty) {
-                              return const _EmptyState();
-                            }
-                            return Column(
-                              children: [
-                                for (var i = 0; i < vehicules.length; i++) ...[
-                                  VehiculeCard(
-                                    vehicule: vehicules[i],
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => VehiculeDetailPage(
-                                          vehicule: vehicules[i],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  if (i < vehicules.length - 1)
-                                    const SizedBox(height: 14),
-                                ],
-                                const SizedBox(height: 80),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
+                      Expanded(
+                        child: _buildVehiculeContent(context, snapshot, all),
+                      ),
                     ],
                   ),
                 ),
@@ -183,8 +197,8 @@ class _VehiculesPageState extends State<VehiculesPage> {
 
 // ─── Widgets utilitaires ──────────────────────────────────────────────────────
 
-class _StatBlock extends StatelessWidget {
-  const _StatBlock({
+class StatBlock extends StatelessWidget {
+  const StatBlock({
     required this.label,
     required this.value,
     required this.valueColor,
@@ -249,12 +263,12 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.directions_car_outlined,
               size: 48,
-              color: AppColors.textSecondary,
+              color: AppColors.secondary,
             ),
             SizedBox(height: 12),
             Text(
               'Aucun véhicule enregistré.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: AppColors.secondary, fontSize: 14),
             ),
           ],
         ),
@@ -272,18 +286,18 @@ class _ErrorTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.red.withOpacity(0.08),
+        color: AppColors.accent.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.red.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.red, size: 18),
+          const Icon(Icons.error_outline, color: AppColors.accent, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: AppColors.red, fontSize: 13),
+              style: const TextStyle(color: AppColors.accent, fontSize: 13),
             ),
           ),
         ],

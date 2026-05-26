@@ -47,6 +47,7 @@ dependencies:
   uuid:
   google_fonts:
   provider:
+  date_picker_timetable:
 
 dev_dependencies:
   flutter_test:

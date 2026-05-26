@@ -21,16 +21,16 @@ class SelectionChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? AppColors.navy : AppColors.bg,
+          color: selected ? AppColors.primary : AppColors.bg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.navy : AppColors.border,
+            color: selected ? AppColors.primary : AppColors.grey,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : AppColors.textPrimary,
+            color: selected ? Colors.white : AppColors.primary,
             fontSize: 13,
             fontWeight: FontWeight.w700,
           ),

@@ -44,7 +44,7 @@ class VehiculeCard extends StatelessWidget {
                   child: Icon(
                     CupertinoIcons.car_detailed,
                     size: 60,
-                    color: AppColors.textSecondary.withOpacity(0.3),
+                    color: AppColors.secondary.withOpacity(0.3),
                   ),
                 ),
                 Positioned(
@@ -86,14 +86,14 @@ class VehiculeCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'PLAQUE: ${vehicule.plaque}',
                           style: const TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondary,
                             fontSize: 11,
                             letterSpacing: 0.3,
                           ),
@@ -104,7 +104,7 @@ class VehiculeCard extends StatelessWidget {
                             Text(
                               vehicule.infoLabel,
                               style: const TextStyle(
-                                color: AppColors.textSecondary,
+                                color: AppColors.secondary,
                                 fontSize: 12,
                               ),
                             ),
@@ -138,7 +138,7 @@ class VehiculeCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.blue,
+                      color: AppColors.info,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(

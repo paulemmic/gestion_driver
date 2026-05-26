@@ -24,7 +24,7 @@ class DatePickerField extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isAlert ? AppColors.red : const Color(0xFFE0E6F0),
+            color: isAlert ? AppColors.accent : const Color(0xFFE0E6F0),
             width: isAlert ? 1.5 : 1,
           ),
         ),
@@ -33,7 +33,7 @@ class DatePickerField extends StatelessWidget {
             Icon(
               Icons.calendar_today_outlined,
               size: 18,
-              color: isAlert ? AppColors.red : AppColors.navy,
+              color: isAlert ? AppColors.accent : AppColors.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -43,7 +43,7 @@ class DatePickerField extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isAlert ? AppColors.red : AppColors.textSecondary,
+                      color: isAlert ? AppColors.accent : AppColors.secondary,
                       fontSize: 11,
                     ),
                   ),
@@ -52,8 +52,8 @@ class DatePickerField extends StatelessWidget {
                     value,
                     style: TextStyle(
                       color: value == 'Sélectionner'
-                          ? AppColors.textSecondary
-                          : AppColors.textPrimary,
+                          ? AppColors.secondary
+                          : AppColors.primary,
                       fontSize: 14,
                       fontWeight: value == 'Sélectionner'
                           ? FontWeight.normal
@@ -65,7 +65,7 @@ class DatePickerField extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: isAlert ? AppColors.red : AppColors.textSecondary,
+              color: isAlert ? AppColors.accent : AppColors.secondary,
               size: 18,
             ),
             if (isAlert) ...[
@@ -73,13 +73,13 @@ class DatePickerField extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.red.withOpacity(0.1),
+                  color: AppColors.accent.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
                   'ALERTE',
                   style: TextStyle(
-                    color: AppColors.red,
+                    color: AppColors.accent,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,

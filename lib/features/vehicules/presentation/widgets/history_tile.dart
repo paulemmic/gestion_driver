@@ -20,10 +20,11 @@ class HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
+
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.primary),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,10 +33,10 @@ class HistoryTile extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: AppColors.blueLight,
+              color: AppColors.info.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(entry.icon, size: 18, color: AppColors.blue),
+            child: Icon(entry.icon, size: 18, color: AppColors.info),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -45,7 +46,7 @@ class HistoryTile extends StatelessWidget {
                 Text(
                   entry.title,
                   style: const TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
@@ -54,7 +55,7 @@ class HistoryTile extends StatelessWidget {
                 Text(
                   entry.description,
                   style: const TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.secondary,
                     fontSize: 12,
                   ),
                 ),
@@ -62,7 +63,7 @@ class HistoryTile extends StatelessWidget {
                 Text(
                   formatHistoryDate(entry.timestamp),
                   style: const TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.secondary,
                     fontSize: 11,
                   ),
                 ),
