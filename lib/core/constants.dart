@@ -14,7 +14,7 @@ const couleurs = [
 const colorSaumon = Color(0xFFF3774D);
 const colorTurquoise = Colors.teal;
 
-const List<String> categories = ['A', 'B', 'Toutes catégories'];
+const List<String> categories = ['A', 'B', 'Toutes catégories(BCDE)'];
 
 String formatDate(DateTime? date) {
   if (date == null) return '—';

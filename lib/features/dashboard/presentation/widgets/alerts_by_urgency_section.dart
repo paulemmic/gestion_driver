@@ -37,7 +37,7 @@ class AlertsByUrgencySection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Assurance, visite technique et patente triees par priorite.',
+            'Permis, assurance, visite technique et patente triees par priorite.',
             style: TextStyle(color: AppColors.secondary, fontSize: 12),
           ),
           const SizedBox(height: 14),

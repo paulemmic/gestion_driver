@@ -333,10 +333,10 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                             width: 88,
                             height: 88,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.12),
+                              color: AppColors.primary.withValues(alpha: 0.12),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),
@@ -505,9 +505,9 @@ class _AddChauffeurPageState extends State<AddChauffeurPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.08),
+                        color: AppColors.primary.withValues(alpha: 0.08),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),

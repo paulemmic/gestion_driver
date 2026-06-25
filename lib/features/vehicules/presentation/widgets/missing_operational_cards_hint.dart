@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class MissingOperationalCardsHint extends StatelessWidget {
-  const MissingOperationalCardsHint();
+  const MissingOperationalCardsHint({super.key});
 
   @override
   Widget build(BuildContext context) {

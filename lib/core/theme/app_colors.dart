@@ -10,10 +10,12 @@ class AppColors {
   static const grey = Color(0xFFAFEB6F);
   static const bg = Color(0xFFF3FCE9);
 
-  static const accent = Color(0xFF470A48);
+  static const accent = Color(0xFFFF0000);
   static const succe = Color(0xFF0B480A);
-  static const danger = Color(0xFF480A0B);
-  static const warning = Color(0xFFB8B519);
+  // static const danger = Color(0xFF480A0B);
+  static const danger = Color(0xFFFF0000);
+  // static const warning = Color(0xFFB8B519);
+  static const warning = Color(0xFFF5A623);
   static const info = Color(0xFF0A0B48);
 }
 

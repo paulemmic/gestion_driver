@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/features/vehicules/services/add_vehicules.dart';
 
-enum CarburantType { essence, diesel, electrique, hybride, gpl }
+enum CarburantType { essence, diesel, electrique, hybride /*gpl*/ }
 
 enum VehiculeStatus { actif, enCourse, maintenance, inactif }
 
@@ -341,7 +341,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
       borderRadius: BorderRadius.circular(14),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 8,
           offset: const Offset(0, 2),
         ),
@@ -708,7 +708,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, -3),
             ),
@@ -720,7 +720,7 @@ class _AddVehiculePageState extends State<AddVehiculePage> {
             onPressed: isSaving ? null : submit,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.primary.withOpacity(0.6),
+              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

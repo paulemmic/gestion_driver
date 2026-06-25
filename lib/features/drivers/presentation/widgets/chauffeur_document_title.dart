@@ -5,7 +5,7 @@ import 'package:gestion_driver/features/drivers/models/chauffeur.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
 
 class ChauffeurDocumentTile extends StatelessWidget {
-  const ChauffeurDocumentTile({required this.document});
+  const ChauffeurDocumentTile({super.key, required this.document});
   final ChauffeurDocument document;
 
   @override

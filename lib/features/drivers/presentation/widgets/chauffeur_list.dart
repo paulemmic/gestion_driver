@@ -20,7 +20,7 @@ class ChauffeurList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: chauffeurs.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final chauffeur = chauffeurs[index];
         return ChauffeurCard(

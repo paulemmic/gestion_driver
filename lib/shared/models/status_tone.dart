@@ -24,15 +24,15 @@ extension StatusToneStyle on StatusTone {
   Color get backgroundColor {
     switch (this) {
       case StatusTone.success:
-        return AppColors.succe.withOpacity(0.08);
+        return AppColors.succe.withValues(alpha: 0.08);
       case StatusTone.warning:
-        return AppColors.warning.withOpacity(0.08);
+        return AppColors.warning.withValues(alpha: 0.08);
       case StatusTone.danger:
-        return AppColors.danger.withOpacity(0.08);
+        return AppColors.danger.withValues(alpha: 0.08);
       case StatusTone.accent:
-        return AppColors.accent.withOpacity(0.08);
+        return AppColors.accent.withValues(alpha: 0.08);
       case StatusTone.notice:
-        return AppColors.warning.withOpacity(0.08);
+        return AppColors.warning.withValues(alpha: 0.08);
       case StatusTone.neutral:
         return AppColors.bg;
     }

@@ -33,5 +33,5 @@ class DashboardDocumentAlert {
     return '$daysRemaining jours restants';
   }
 
-  get status => null;
+  Null get status => null;
 }

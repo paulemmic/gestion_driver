@@ -28,7 +28,7 @@ class ChauffeurCard extends StatelessWidget {
         : getExpiryInfo(nearestDate);
 
     final alertColor = expire.color;
-    final alertBg = expire.color.withOpacity(0.08);
+    final alertBg = expire.color.withValues(alpha: 0.08);
 
     return GestureDetector(
       onTap: onTap,
@@ -46,7 +46,7 @@ class ChauffeurCard extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 24,
+                    radius: 30,
                     backgroundColor: AppColors.bg,
                     foregroundImage:
                         chauffeur.photoUrl != null &&

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/core/theme/app_shadows.dart';
+import 'package:gestion_driver/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:gestion_driver/features/auth/presentation/cubit/auth_state.dart';
 import 'package:gestion_driver/features/settings/presentation/pages/notification_settings_page.dart';
 import 'package:gestion_driver/features/settings/presentation/pages/profile_page.dart';
 
@@ -124,74 +127,88 @@ class _ProfileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: AppShadows.subtle,
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: const Icon(
-                Icons.person,
-                color: AppColors.primary,
-                size: 30,
-              ),
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        final user = state is Authenticated ? state.user : null;
+        if (user == null) return const SizedBox.shrink();
+
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppShadows.subtle,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Jean-Baptiste Kouamé',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.primary,
+                    size: 30,
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Gestionnaire de flotte',
-                    style: TextStyle(fontSize: 12, color: AppColors.secondary),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Voir le profil →',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name.isNotEmpty
+                            ? user.name[0].toUpperCase()
+                            : 'Utilisateur',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        user.role != null
+                            ? user.role![0].toUpperCase()
+                            : 'Rôle inconnu',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Voir le profil →',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.secondary,
+                  size: 20,
+                ),
+              ],
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.secondary,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -158,36 +158,51 @@ class Chauffeur {
     DateTime? dateExpirationVisite,
   }) {
     final now = DateTime.now();
-    final soon = now.add(const Duration(days: 30));
+    final today = DateTime(now.year, now.month, now.day);
+    final soon = today.add(const Duration(days: 30));
 
     // Permis expiré
-    if (dateExpirationPermis != null && dateExpirationPermis.isBefore(now)) {
-      return const ChauffeurAlert(
-        label: 'PERMIS EXPIRÉ',
-        value: 'EXPIRÉ',
-        tone: StatusTone.danger,
-        icon: Icons.error_outline,
+    if (dateExpirationPermis != null) {
+      final permisOnly = DateTime(
+        dateExpirationPermis.year,
+        dateExpirationPermis.month,
+        dateExpirationPermis.day,
       );
-    }
-    // Permis expire bientôt
-    if (dateExpirationPermis != null && dateExpirationPermis.isBefore(soon)) {
-      final days = dateExpirationPermis.difference(now).inDays;
-      return ChauffeurAlert(
-        label: 'EXPIRATION DU PERMIS',
-        value: '$days JOURS',
-        tone: StatusTone.danger,
-        icon: Icons.warning_amber_rounded,
-      );
+      if (permisOnly.isBefore(today)) {
+        return const ChauffeurAlert(
+          label: 'PERMIS EXPIRÉ',
+          value: 'EXPIRÉ',
+          tone: StatusTone.danger,
+          icon: Icons.error_outline,
+        );
+      }
+      // Permis expire bientôt
+      if (permisOnly.isBefore(soon)) {
+        final days = permisOnly.difference(today).inDays;
+        return ChauffeurAlert(
+          label: 'EXPIRATION DU PERMIS',
+          value: days == 0 ? "AUJOURD'HUI" : '$days JOUR${days > 1 ? 'S' : ''}',
+          tone: StatusTone.danger,
+          icon: Icons.warning_amber_rounded,
+        );
+      }
     }
     // Visite médicale expire bientôt
-    if (dateExpirationVisite != null && dateExpirationVisite.isBefore(soon)) {
-      final days = dateExpirationVisite.difference(now).inDays;
-      return ChauffeurAlert(
-        label: 'VISITE MÉDICALE',
-        value: '$days JOURS',
-        tone: StatusTone.warning,
-        icon: Icons.timer_outlined,
+    if (dateExpirationVisite != null) {
+      final visiteOnly = DateTime(
+        dateExpirationVisite.year,
+        dateExpirationVisite.month,
+        dateExpirationVisite.day,
       );
+      if (visiteOnly.isBefore(soon)) {
+        final days = visiteOnly.difference(today).inDays;
+        return ChauffeurAlert(
+          label: 'VISITE MÉDICALE',
+          value: days == 0 ? "AUJOURD'HUI" : '$days JOUR${days > 1 ? 'S' : ''}',
+          tone: StatusTone.warning,
+          icon: Icons.timer_outlined,
+        );
+      }
     }
 
     return const ChauffeurAlert(

@@ -57,7 +57,7 @@ class VidangeCard extends StatelessWidget {
         border: Border.all(color: AppColors.grey),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -71,7 +71,7 @@ class VidangeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: status.color.withOpacity(0.1),
+                  color: status.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -96,7 +96,7 @@ class VidangeCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: status.color.withOpacity(0.1),
+                  color: status.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -165,7 +165,7 @@ class VidangeCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: status.color.withOpacity(0.07),
+                color: status.color.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gestion_driver/features/auth/domain/entites/app_user.dart';
 import 'package:gestion_driver/features/auth/domain/repos/auth_repo.dart';
@@ -14,7 +15,13 @@ class FirebaseAuthRepo implements AuthRepo {
       UserCredential userCredential = await firebaseAuth
           .signInWithEmailAndPassword(email: email, password: password);
 
-      AppUser user = AppUser(uid: userCredential.user!.uid, email: email);
+      AppUser user = AppUser(
+        uid: userCredential.user!.uid,
+        email: email,
+        name: userCredential.user!.displayName ?? "",
+      );
+
+      await createUser(user);
       return user;
     } catch (e) {
       throw Exception("Login failed: $e");
@@ -31,7 +38,12 @@ class FirebaseAuthRepo implements AuthRepo {
       UserCredential userCredential = await firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      AppUser user = AppUser(uid: userCredential.user!.uid, email: email);
+      AppUser user = AppUser(
+        uid: userCredential.user!.uid,
+        email: email,
+        name: userCredential.user!.displayName ?? "",
+      );
+      await createUser(user);
       return user;
     } catch (e) {
       throw Exception("Registration failed: $e");
@@ -56,7 +68,11 @@ class FirebaseAuthRepo implements AuthRepo {
     final firebaseUser = firebaseAuth.currentUser;
     if (firebaseUser == null) return null;
 
-    return AppUser(uid: firebaseUser.uid, email: firebaseUser.email!);
+    return AppUser(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email!,
+      name: firebaseUser.displayName ?? "",
+    );
   }
 
   @override
@@ -97,12 +113,13 @@ class FirebaseAuthRepo implements AuthRepo {
 
       if (firebaseUser == null) return null;
 
-      AppUser appUser = AppUser(
+      AppUser user = AppUser(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? "",
+        name: firebaseUser.displayName ?? "",
       );
-
-      return appUser;
+      await createUser(user);
+      return user;
     } catch (e) {
       print("Error signing in with Apple: $e");
       return null;
@@ -113,16 +130,20 @@ class FirebaseAuthRepo implements AuthRepo {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       // final GoogleSignInAccount? gUser =
-      await googleSignIn.initialize(
-        serverClientId:
-            "414683659454-3g29o0k1f95bra8n2dutn59kqaui0ekp.apps.googleusercontent.com",
-      );
+      await googleSignIn.initialize(serverClientId: "YOUR_SERVER");
 
       final googleSignInAccount = await googleSignIn.authenticate();
 
       final auth = googleSignInAccount.authentication;
       final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
+      await createUser(
+        AppUser(
+          uid: googleSignInAccount.id,
+          email: googleSignInAccount.email,
+          name: googleSignInAccount.displayName ?? "",
+        ),
+      );
       return await firebaseAuth.signInWithCredential(credential);
     } catch (e) {
       print(e);
@@ -142,5 +163,12 @@ class FirebaseAuthRepo implements AuthRepo {
   String? get currentUser {
     final user = firebaseAuth.currentUser;
     return user?.email;
+  }
+
+  Future<void> createUser(AppUser user) async {
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user.uid)
+        .set(user.toJson());
   }
 }

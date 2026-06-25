@@ -55,7 +55,7 @@ class AddChauffeur {
       alert = ChauffeurAlert(
         label: 'EXPIRATION DU PERMIS',
         value: '$days JOURS',
-        tone: StatusTone.danger,
+        tone: StatusTone.warning,
         icon: Icons.warning_amber_rounded,
       );
     } else if (dateExpirationVisite != null &&

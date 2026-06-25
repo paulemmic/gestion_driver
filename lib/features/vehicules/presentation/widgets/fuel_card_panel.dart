@@ -5,7 +5,7 @@ import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/shared/widgets/status_badge.dart';
 
 class FuelCardPanel extends StatelessWidget {
-  const FuelCardPanel({required this.card});
+  const FuelCardPanel({super.key, required this.card});
 
   final FuelCardInfo card;
 

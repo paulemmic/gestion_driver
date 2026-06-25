@@ -3,6 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class InfoRow extends StatelessWidget {
   const InfoRow({
+    super.key,
     required this.icon,
     required this.label,
     required this.value,

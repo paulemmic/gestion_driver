@@ -19,15 +19,21 @@ class ExpireInfo {
 
 ExpireInfo getExpiryInfo(DateTime? date) {
   if (date == null) {
-    return const ExpireInfo(
+    return ExpireInfo(
       status: ExpiryStatus.ok,
-      color: AppColors.succe,
+      color: AppColors.succe.withValues(alpha: 0.08),
       icon: Icons.check_circle,
       label: 'Tous les documents conformes',
     );
   }
-  final maint = DateTime.now();
-  final diff = date.difference(maint).inDays;
+
+  final maint = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  final dateOnly = DateTime(date.year, date.month, date.day);
+  final diff = dateOnly.difference(maint).inDays;
 
   if (diff < 0) {
     return ExpireInfo(
@@ -36,10 +42,17 @@ ExpireInfo getExpiryInfo(DateTime? date) {
       icon: Icons.cancel,
       label: 'Expiré depuis ${diff.abs()} jour${diff.abs() > 1 ? 's' : ''}',
     );
-  } else if (diff <= 7) {
+  } else if (diff == 0) {
     return ExpireInfo(
       status: ExpiryStatus.urgent,
       color: AppColors.accent,
+      icon: Icons.warning_rounded,
+      label: 'Expire aujourd\'hui',
+    );
+  } else if (diff <= 7) {
+    return ExpireInfo(
+      status: ExpiryStatus.urgent,
+      color: AppColors.warning,
       icon: Icons.warning_rounded,
       label: 'Expire dans $diff jour${diff > 1 ? 's' : ''}',
     );

@@ -3,6 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class DropdownField extends StatelessWidget {
   const DropdownField({
+    super.key,
     required this.label,
     required this.value,
     required this.items,
@@ -19,7 +20,7 @@ class DropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       onChanged: onChanged,
       style: const TextStyle(
         color: AppColors.primary,

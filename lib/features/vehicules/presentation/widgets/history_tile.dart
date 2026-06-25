@@ -3,7 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_historique_entry.dart';
 
 class HistoryTile extends StatelessWidget {
-  const HistoryTile({required this.entry});
+  const HistoryTile({super.key, required this.entry});
 
   final VehiculeHistoriqueEntry entry;
 
@@ -33,7 +33,7 @@ class HistoryTile extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.08),
+              color: AppColors.info.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(entry.icon, size: 18, color: AppColors.info),

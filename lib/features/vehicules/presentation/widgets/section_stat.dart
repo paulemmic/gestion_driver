@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SectionStat extends StatelessWidget {
-  const SectionStat({required this.label, required this.value});
+  const SectionStat({super.key, required this.label, required this.value});
 
   final String label;
   final String value;
@@ -11,9 +11,9 @@ class SectionStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

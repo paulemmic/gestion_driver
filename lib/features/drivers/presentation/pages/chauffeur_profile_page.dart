@@ -243,12 +243,12 @@ class _ChauffeurProfilePageState extends State<ChauffeurProfilePage> {
                                 decoration: BoxDecoration(
                                   color: statutColor(
                                     chauffeur.statut,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: statutColor(
                                       chauffeur.statut,
-                                    ).withOpacity(0.4),
+                                    ).withValues(alpha: 0.4),
                                   ),
                                 ),
                                 child: Text(
@@ -266,17 +266,17 @@ class _ChauffeurProfilePageState extends State<ChauffeurProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  // Remplacez le Container du bandeau de conformité par ceci :
+
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: complianceColor.withOpacity(0.08),
+                      color: complianceColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: complianceColor.withOpacity(0.3),
+                        color: complianceColor.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(

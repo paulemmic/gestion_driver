@@ -3,7 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 import 'package:gestion_driver/features/drivers/models/chauffeur.dart';
 
 class ChauffeurMetricBlock extends StatelessWidget {
-  const ChauffeurMetricBlock({required this.metric});
+  const ChauffeurMetricBlock({super.key, required this.metric});
   final ChauffeurMetric metric;
 
   @override

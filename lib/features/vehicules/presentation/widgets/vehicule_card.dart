@@ -44,7 +44,7 @@ class VehiculeCard extends StatelessWidget {
                   child: Icon(
                     CupertinoIcons.car_detailed,
                     size: 60,
-                    color: AppColors.secondary.withOpacity(0.3),
+                    color: AppColors.secondary.withValues(alpha: 0.3),
                   ),
                 ),
                 Positioned(
@@ -91,7 +91,7 @@ class VehiculeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'PLAQUE: ${vehicule.plaque}',
+                          'IMMATRICULATION: ${vehicule.plaque}',
                           style: const TextStyle(
                             color: AppColors.secondary,
                             fontSize: 11,

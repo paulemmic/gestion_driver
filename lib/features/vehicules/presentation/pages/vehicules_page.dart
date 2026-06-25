@@ -70,7 +70,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: vehicules.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
         final vehicule = vehicules[index];
         return VehiculeCard(
@@ -199,6 +199,7 @@ class _VehiculesPageState extends State<VehiculesPage> {
 
 class StatBlock extends StatelessWidget {
   const StatBlock({
+    super.key,
     required this.label,
     required this.value,
     required this.valueColor,
@@ -286,9 +287,9 @@ class _ErrorTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.08),
+        color: AppColors.accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

@@ -188,7 +188,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 }
 
 class MasterSwitch extends StatelessWidget {
-  const MasterSwitch({required this.value, required this.onChanged});
+  const MasterSwitch({super.key, required this.value, required this.onChanged});
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -208,7 +208,7 @@ class MasterSwitch extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: (value ? AppColors.primary : Colors.grey.shade300)
-                  .withOpacity(0.12),
+                  .withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -245,7 +245,7 @@ class MasterSwitch extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),
@@ -254,7 +254,7 @@ class MasterSwitch extends StatelessWidget {
 }
 
 class InfoBanner extends StatelessWidget {
-  const InfoBanner({required this.message});
+  const InfoBanner({super.key, required this.message});
   final String message;
 
   @override
@@ -262,9 +262,9 @@ class InfoBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.07),
+        color: AppColors.primary.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,6 +297,7 @@ class AlertCategoryCard extends StatelessWidget {
   final ValueChanged<AlertFrequency> onFrequencyChanged;
 
   const AlertCategoryCard({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -316,7 +317,7 @@ class AlertCategoryCard extends StatelessWidget {
         boxShadow: AppShadows.subtle,
         border: Border.all(
           color: enabled
-              ? AppColors.primary.withOpacity(0.18)
+              ? AppColors.primary.withValues(alpha: 0.18)
               : Colors.transparent,
           width: 1,
         ),
@@ -332,7 +333,7 @@ class AlertCategoryCard extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     color: (enabled ? AppColors.primary : Colors.grey.shade300)
-                        .withOpacity(0.12),
+                        .withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Icon(
@@ -369,7 +370,7 @@ class AlertCategoryCard extends StatelessWidget {
                 Switch(
                   value: enabled,
                   onChanged: onToggle,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ],
@@ -415,7 +416,7 @@ class AlertCategoryCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: selected
                                   ? AppColors.primary
-                                  : AppColors.primary.withOpacity(0.06),
+                                  : AppColors.primary.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
@@ -446,7 +447,7 @@ class AlertCategoryCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     color: selected
-                                        ? Colors.white.withOpacity(0.85)
+                                        ? Colors.white.withValues(alpha: 0.85)
                                         : AppColors.secondary,
                                   ),
                                 ),

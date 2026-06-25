@@ -3,6 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class DatePickerField extends StatelessWidget {
   const DatePickerField({
+    super.key,
     required this.label,
     required this.value,
     required this.onTap,
@@ -73,7 +74,7 @@ class DatePickerField extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(

@@ -3,6 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class InfoPanel extends StatelessWidget {
   const InfoPanel({
+    super.key,
     required this.title,
     required this.value,
     required this.toneColor,

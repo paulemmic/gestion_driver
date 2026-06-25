@@ -11,6 +11,7 @@ class DateInputField extends StatelessWidget {
   final VoidCallback? onCalendarTap;
 
   const DateInputField({
+    super.key,
     required this.label,
     required this.controller,
     required this.hint,

@@ -3,6 +3,7 @@ import 'package:gestion_driver/core/theme/app_colors.dart';
 
 class SelectionChip extends StatelessWidget {
   const SelectionChip({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,

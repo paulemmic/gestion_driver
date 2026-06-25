@@ -5,7 +5,7 @@ import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/shared/widgets/status_badge.dart';
 
 class TollTagPanel extends StatelessWidget {
-  const TollTagPanel({required this.tag});
+  const TollTagPanel({super.key, required this.tag});
 
   final TollTagInfo tag;
 

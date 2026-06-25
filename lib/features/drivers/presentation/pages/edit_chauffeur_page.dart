@@ -326,7 +326,9 @@ class _EditChauffeurPageState extends State<EditChauffeurPage> {
                   children: [
                     CircleAvatar(
                       radius: 46,
-                      backgroundColor: AppColors.primary.withOpacity(0.12),
+                      backgroundColor: AppColors.primary.withValues(
+                        alpha: 0.12,
+                      ),
                       foregroundImage: _avatarImage,
                       child: _avatarImage == null
                           ? Text(

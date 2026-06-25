@@ -10,6 +10,14 @@ class VehiculeDocCard extends StatelessWidget {
 
   final VehiculeDocument document;
 
+  String get _dateExpirationLabel {
+    final date = document.dateExpiration;
+    if (date == null) return 'Date d\'expiration non renseignee';
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -27,7 +35,7 @@ class VehiculeDocCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.08),
+              color: AppColors.info.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(document.icon, color: AppColors.info, size: 20),
@@ -66,7 +74,7 @@ class VehiculeDocCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  document.extra,
+                  _dateExpirationLabel,
                   style: TextStyle(
                     color: document.extraTone.foregroundColor,
                     fontSize: 12,

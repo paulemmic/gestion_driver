@@ -132,6 +132,7 @@ class VehiculeDocument {
   final StatusTone tone;
   final String extra;
   final StatusTone extraTone;
+  final DateTime? dateExpiration;
 
   const VehiculeDocument({
     required this.icon,
@@ -141,6 +142,7 @@ class VehiculeDocument {
     required this.tone,
     required this.extra,
     this.extraTone = StatusTone.neutral,
+    this.dateExpiration,
   });
 }
 

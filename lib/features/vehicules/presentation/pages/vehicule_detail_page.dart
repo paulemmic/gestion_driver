@@ -4,11 +4,13 @@ import 'package:gestion_driver/features/vehicules/models/vehicule.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_document_draft.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_historique_draft.dart';
 import 'package:gestion_driver/features/vehicules/models/vehicule_historique_entry.dart';
+import 'package:gestion_driver/features/vehicules/presentation/pages/documents_list_page.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/history_tile.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/info_panel.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/vehicule_doc_card.dart';
 import 'package:gestion_driver/features/vehicules/presentation/widgets/vidange_card.dart';
 import 'package:gestion_driver/features/vehicules/services/document.dart';
+import 'package:gestion_driver/features/vehicules/utils/document_utils.dart';
 import 'package:gestion_driver/shared/models/status_tone.dart';
 
 enum DocumentTypeOption {
@@ -17,6 +19,13 @@ enum DocumentTypeOption {
   visiteTechnique,
   carteStationnement,
   patente,
+  permisConducteur,
+  vignette,
+  factureAchat,
+  certificatCession,
+  carnetEntretien,
+  factureReparation,
+  autre,
 }
 
 extension DocumentTypeOptionExt on DocumentTypeOption {
@@ -26,6 +35,13 @@ extension DocumentTypeOptionExt on DocumentTypeOption {
     DocumentTypeOption.visiteTechnique => 'Visite technique',
     DocumentTypeOption.carteStationnement => 'Carte de stationnement',
     DocumentTypeOption.patente => 'Patente',
+    DocumentTypeOption.permisConducteur => 'permisConducteur',
+    DocumentTypeOption.vignette => 'vignette',
+    DocumentTypeOption.factureAchat => 'factureAchat',
+    DocumentTypeOption.certificatCession => 'certificatCession',
+    DocumentTypeOption.carnetEntretien => 'carnetEntretien',
+    DocumentTypeOption.factureReparation => 'factureReparation',
+    DocumentTypeOption.autre => 'autre',
   };
 
   IconData get icon => switch (this) {
@@ -34,6 +50,13 @@ extension DocumentTypeOptionExt on DocumentTypeOption {
     DocumentTypeOption.visiteTechnique => Icons.build_circle_outlined,
     DocumentTypeOption.carteStationnement => Icons.local_parking_outlined,
     DocumentTypeOption.patente => Icons.receipt_long_outlined,
+    DocumentTypeOption.permisConducteur => Icons.add_ic_call_outlined,
+    DocumentTypeOption.vignette => Icons.icecream_outlined,
+    DocumentTypeOption.factureAchat => Icons.factory_outlined,
+    DocumentTypeOption.certificatCession => Icons.cell_tower_rounded,
+    DocumentTypeOption.carnetEntretien => Icons.import_contacts,
+    DocumentTypeOption.factureReparation => Icons.factory_outlined,
+    DocumentTypeOption.autre => Icons.abc,
   };
 }
 
@@ -57,7 +80,7 @@ DocumentStatusOption _statusFromExpiryString(String expiryStr) {
     final daysLeft = expiry.difference(now).inDays;
 
     if (daysLeft < 0) return DocumentStatusOption.expire;
-    if (daysLeft <= 30) return DocumentStatusOption.bientotExpire;
+    if (daysLeft < 30) return DocumentStatusOption.bientotExpire;
     return DocumentStatusOption.valide;
   } catch (_) {
     return DocumentStatusOption.valide;
@@ -79,6 +102,13 @@ DateTime? parseDate(String raw) {
   } catch (_) {
     return null;
   }
+}
+
+String formatDocumentDate(DateTime? date) {
+  if (date == null) return '';
+  return '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/'
+      '${date.year}';
 }
 
 enum VehiculeAddAction { document /* history */ }
@@ -210,8 +240,13 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
         ? _typeFromTitle(existing.title)
         : DocumentTypeOption.assurance;
 
+    final existingDateText = formatDocumentDate(existing?.dateExpiration);
     final subtitleCtrl = TextEditingController(text: existing?.subtitle ?? '');
-    final expiryCtrl = TextEditingController(text: existing?.extra ?? '');
+    final expiryCtrl = TextEditingController(
+      text: existingDateText.isNotEmpty
+          ? existingDateText
+          : existing?.extra ?? '',
+    );
     final formKey = GlobalKey<FormState>();
 
     final draft = await showDialog<VehiculeDocumentDraft>(
@@ -232,7 +267,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                     children: [
                       // ── Type de document (menu déroulant) ──────────────
                       DropdownButtonFormField<DocumentTypeOption>(
-                        value: docType,
+                        initialValue: docType,
                         decoration: const InputDecoration(
                           labelText: 'Type de document',
                         ),
@@ -298,7 +333,9 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                                         surface: Colors.white,
                                         onSurface: AppColors.primary,
                                       ),
-                                      dialogBackgroundColor: AppColors.white,
+                                      dialogTheme: DialogThemeData(
+                                        backgroundColor: AppColors.white,
+                                      ),
                                     ),
                                     child: child!,
                                   );
@@ -346,7 +383,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
 
                       ValueListenableBuilder<TextEditingValue>(
                         valueListenable: expiryCtrl,
-                        builder: (_, val, __) {
+                        builder: (_, val, _) {
                           if (val.text.length < 10) {
                             return const SizedBox.shrink();
                           }
@@ -410,14 +447,16 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
 
     if (draft == null) return;
 
+    final dateExpiration = parseDate(draft.expiry);
     final document = VehiculeDocument(
       icon: _typeFromTitle(draft.title).icon,
       title: draft.title,
       subtitle: draft.subtitle.isEmpty ? 'Ajout manuel' : draft.subtitle,
       status: draft.status.badgeLabel,
       tone: draft.status.tone,
-      extra: draft.expiry,
+      extra: formatDocumentDate(dateExpiration),
       extraTone: draft.status.tone,
+      dateExpiration: dateExpiration,
     );
 
     if (isEditing) {
@@ -548,7 +587,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                         itemCount: sortedHistory.length,
                         itemBuilder: (context, index) =>
                             HistoryTile(entry: sortedHistory[index]),
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                       ),
                     ),
                 ],
@@ -678,8 +717,9 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     final normalized = title.toLowerCase();
     if (normalized.contains('assurance')) return DocumentTypeOption.assurance;
     if (normalized.contains('grise')) return DocumentTypeOption.carteGrise;
-    if (normalized.contains('visite'))
+    if (normalized.contains('visite')) {
       return DocumentTypeOption.visiteTechnique;
+    }
     if (normalized.contains('stationnement')) {
       return DocumentTypeOption.carteStationnement;
     }
@@ -703,7 +743,7 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
     DateTime? soonest;
 
     for (final doc in documents) {
-      final date = parseDate(doc.extra);
+      final date = doc.dateExpiration;
       if (date == null) continue;
 
       final days = date.difference(now).inDays;
@@ -1021,18 +1061,87 @@ class _VehiculeDetailPageState extends State<VehiculeDetailPage> {
                           ),
                         ),
                       )
-                    else
-                      for (var i = 0; i < documents.length; i++) ...[
-                        // ── Card + bouton modifier ────────────────────
-                        GestureDetector(
-                          onTap: () => openDocumentDialog(editIndex: i),
-                          child: Stack(
-                            children: [VehiculeDocCard(document: documents[i])],
+                    else ...[
+                      ...documents
+                          .where((d) {
+                            final s = statusFromDate(d.dateExpiration);
+                            return s == DocumentStatusOption.expire ||
+                                s == DocumentStatusOption.bientotExpire;
+                          })
+                          .take(2)
+                          .map((d) {
+                            final i = documents.indexOf(d);
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: GestureDetector(
+                                onTap: () => openDocumentDialog(editIndex: i),
+                                child: VehiculeDocCard(document: d),
+                              ),
+                            );
+                          }),
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DocumentsListPage(
+                                vehicule: widget.vehicule,
+                                documents: documents,
+                                onDocumentTap: (i) async {
+                                  await openDocumentDialog(editIndex: i);
+                                  // setState déjà appelé dans openDocumentDialog
+                                },
+                                onAddTap: () async {
+                                  await openDocumentDialog();
+                                },
+                                onDocumentsChanged: () => setState(() {}),
+                              ),
+                            ),
+                          );
+                          setState(() {});
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.grey),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+
+                            children: [
+                              Text(
+                                'Voir tous les documents (${documents.length})',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ],
                           ),
                         ),
-                        if (i < documents.length - 1)
-                          const SizedBox(height: 10),
-                      ],
+                      ),
+                    ],
+                    // for (var i = 0; i < documents.length; i++) ...[
+                    //   // ── Card + bouton modifier ────────────────────
+                    //   GestureDetector(
+                    //     onTap: () => openDocumentDialog(editIndex: i),
+                    //     child: Stack(
+                    //       children: [VehiculeDocCard(document: documents[i])],
+                    //     ),
+                    //   ),
+                    //   if (i < documents.length - 1)
+                    //     const SizedBox(height: 10),
+                    // ],
                   ],
                 ),
               ),
